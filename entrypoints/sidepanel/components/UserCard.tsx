@@ -1,0 +1,156 @@
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserCheck, UserX, Loader2 } from 'lucide-react'
+import { UserInfo, toggleUserActiveStatus, loadSalesforceConfig } from '@/lib/salesforce'
+import { useState } from 'react'
+
+interface UserCardProps {
+  user: UserInfo
+  onActivateToggle?: (user: UserInfo) => void
+  onStatusUpdate?: (updatedUser: UserInfo) => void
+}
+
+export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState(user)
+
+  const handleToggleActivation = async () => {
+    console.log('handleToggleActivation called', { onActivateToggle: !!onActivateToggle })
+    
+    if (onActivateToggle) {
+      console.log('Using custom onActivateToggle handler')
+      onActivateToggle(currentUser)
+      return
+    }
+
+    console.log('Using default implementation')
+    // If no custom handler provided, use default implementation
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Get Salesforce configuration
+      const { config } = loadSalesforceConfig()
+      
+      if (!config) {
+        throw new Error('Salesforce configuration not found. Please reconnect.')
+      }
+
+      // Toggle the user's active status
+      const newActiveStatus = !currentUser.is_active
+      console.log(`Toggling user ${currentUser.name} from ${currentUser.is_active} to ${newActiveStatus}`)
+      
+      const result = await toggleUserActiveStatus(config, currentUser.user_id, newActiveStatus)
+      console.log('toggleUserActiveStatus result:', result)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update user status')
+      }
+
+      // Update the local user state
+      const updatedUser = {
+        ...currentUser,
+        is_active: newActiveStatus
+      }
+      
+      setCurrentUser(updatedUser)
+      
+      // Notify parent component if callback provided
+      if (onStatusUpdate) {
+        onStatusUpdate(updatedUser)
+      }
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      setError(errorMessage)
+      console.error('Failed to toggle user activation:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <Card className="p-3">
+      <div className="flex items-center gap-3">
+        {/* User Avatar */}
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={currentUser.picture} alt={currentUser.name} />
+          <AvatarFallback>
+            {currentUser.name.split(' ').map((n: string) => n[0]).join('')}
+          </AvatarFallback>
+        </Avatar>
+        
+        {/* User Information */}
+        <div className="flex-1 min-w-0">
+          <div className="space-y-1">
+            {/* First row: Username and Status */}
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm truncate">
+                {currentUser.name} {currentUser.alias && `(${currentUser.alias})`}
+              </span>
+              <Badge 
+                variant={currentUser.is_active ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {currentUser.is_active ? 'active' : 'inactive'}
+              </Badge>
+            </div>
+            
+            {/* Second row: Email */}
+            <div className="text-xs text-muted-foreground truncate">
+              {currentUser.email}
+            </div>
+            
+            {/* Third row: Division */}
+            <div className="text-xs text-muted-foreground truncate">
+              Division: {currentUser.division || 'N/A'}
+            </div>
+            
+            {/* Fourth row: Profile */}
+            <div className="text-xs text-muted-foreground truncate">
+              Profile: {currentUser.profile_name || 'N/A'}
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="text-xs text-red-500 truncate">
+                Error: {error}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Action Button */}
+        <div className="flex-shrink-0">
+          <Button
+            variant={currentUser.is_active ? 'destructive' : 'default'}
+            size="sm"
+            className="text-xs cursor-pointer hover:scale-105 transition-transform duration-200"
+            onClick={handleToggleActivation}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                {currentUser.is_active ? 'Deactivating...' : 'Activating...'}
+              </>
+            ) : currentUser.is_active ? (
+              <>
+                <UserX className="h-3 w-3 mr-1" />
+                Deactivate
+              </>
+            ) : (
+              <>
+                <UserCheck className="h-3 w-3 mr-1" />
+                Activate
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+}

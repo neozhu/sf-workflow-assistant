@@ -307,3 +307,84 @@ export async function searchSalesforceUsers(
     }
   }
 }
+
+/**
+ * Toggle user active status in Salesforce
+ */
+export async function toggleUserActiveStatus(
+  config: SalesforceConfig,
+  userId: string,
+  isActive: boolean
+): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    // Validate input parameters
+    if (!config.instanceUrl || !config.accessToken) {
+      return {
+        success: false,
+        error: 'Instance URL and Access Token are required'
+      }
+    }
+
+    if (!userId) {
+      return {
+        success: false,
+        error: 'User ID is required'
+      }
+    }
+
+    // Clean up instance URL
+    const instanceUrl = config.instanceUrl.replace(/\/$/, '')
+    
+    // Prepare the update request
+    const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User/${userId}`
+    
+    const updateData = {
+      IsActive: isActive
+    }
+
+    // Make API request to update user
+    const response = await fetch(apiUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(updateData)
+    })
+    console.log('Toggle user active status response:', response)
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      
+      try {
+        const errorData = await response.json()
+        if (errorData.message) {
+          errorMessage = errorData.message
+        } else if (errorData[0]?.message) {
+          errorMessage = errorData[0].message
+        }
+      } catch {
+        // Use default error message if JSON parsing fails
+      }
+
+      return {
+        success: false,
+        error: errorMessage
+      }
+    }
+
+    return {
+      success: true
+    }
+
+  } catch (error) {
+    console.error('Toggle user active status failed:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
