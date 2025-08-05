@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase } from 'lucide-react'
+import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle } from 'lucide-react'
 
 interface ApplicantInfo {
   name: string;
@@ -11,6 +11,7 @@ interface ApplicantInfo {
   system: string;
   location: string;
   businessArea: string;
+  workAreas: string[];
 }
 
 interface ApplicantInfoProps {
@@ -93,6 +94,25 @@ export function ApplicantInfo({ applicantInfo }: ApplicantInfoProps) {
           <div className="flex-1">
             <div className="font-medium text-muted-foreground text-xs">Business Area</div>
             <div className="truncate">{applicantInfo.businessArea || 'N/A'}</div>
+          </div>
+        </div>
+
+        {/* Work Areas */}
+        <div className="flex items-start gap-2 text-sm">
+          <CheckCircle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <div className="font-medium text-muted-foreground text-xs">Work Scopes</div>
+            <div className="space-y-1">
+              {applicantInfo.workAreas && applicantInfo.workAreas.length > 0 ? (
+                applicantInfo.workAreas.map((workArea, index) => (
+                  <div key={index} className="text-xs bg-muted px-2 py-1 rounded">
+                    {workArea}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-muted-foreground">N/A</div>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

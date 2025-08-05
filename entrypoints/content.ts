@@ -9,6 +9,7 @@ interface ApplicantInfo {
   system: string;
   location: string;
   businessArea: string;
+  workAreas: string[];
 }
 
 // Function to extract applicant information from the workflow page
@@ -60,6 +61,19 @@ function extractApplicantInfo(): ApplicantInfo | null {
     const businessAreaInput = document.querySelector('input[name="MainData.Area"]') as HTMLInputElement;
     const businessArea = businessAreaInput?.value?.trim() || '';
 
+    // Extract Work Areas information
+    const workAreas: string[] = [];
+    const workAreaDiv = document.querySelector('#tblWorkAreas');
+    if (workAreaDiv) {
+      const descriptionLabels = workAreaDiv.querySelectorAll('label[for*="Description"] .blueLabel');
+      descriptionLabels.forEach(label => {
+        const description = label.textContent?.trim();
+        if (description) {
+          workAreas.push(description);
+        }
+      });
+    }
+
     const applicantInfo: ApplicantInfo = {
       name,
       shortname,
@@ -69,7 +83,8 @@ function extractApplicantInfo(): ApplicantInfo | null {
       division,
       system,
       location,
-      businessArea
+      businessArea,
+      workAreas
     };
 
     console.log('Extracted applicant info:', applicantInfo);
