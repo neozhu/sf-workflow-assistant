@@ -33,13 +33,20 @@ export default defineBackground(() => {
     if (info.menuItemId === 'extract-workflow-info' && tab?.id) {
       console.log('Context menu clicked: Extract Workflow Information');
       
-      // Send message to content script to extract workflow info
       try {
+        // First, ensure sidepanel is open
+        await browser.sidePanel.open({ tabId: tab.id });
+        console.log('Sidepanel opened');
+        
+        // Wait a moment for sidepanel to fully load
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Send message to content script to extract workflow info
         await browser.tabs.sendMessage(tab.id, {
           type: 'EXTRACT_WORKFLOW_INFO'
         });
       } catch (error) {
-        console.error('Error sending message to content script:', error);
+        console.error('Error in context menu handler:', error);
       }
     }
   });
