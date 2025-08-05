@@ -13,6 +13,12 @@ export default defineConfig({
   }),
   manifest: {
     permissions: ['sidePanel', 'storage'],
+    host_permissions: [
+      'https://*.salesforce.com/*',
+      'https://*.force.com/*',
+      'https://*.my.salesforce.com/*',
+      'https://*.lightning.force.com/*'
+    ],
     side_panel: {
       default_path: 'sidepanel.html'
     },

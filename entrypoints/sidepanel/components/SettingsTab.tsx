@@ -8,11 +8,23 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/hooks/use-settings'
 import { useTheme } from '@/hooks/use-theme'
+import { 
+  testSalesforceConnection, 
+  saveSalesforceConfig, 
+  loadSalesforceConfig, 
+  clearSalesforceConfig,
+  type OrganizationInfo,
+  type SalesforceConnectionResult 
+} from '@/lib/salesforce'
 import {
   Monitor,
   Moon,
-  Sun
+  Sun,
+  Loader2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 interface SettingsTabProps {
   appearance: any
@@ -29,6 +41,28 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     onThemeChange: (theme) => updateAppearance({ theme })
   })
 
+  // State for connection testing and organization info
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const [connectionResult, setConnectionResult] = useState<SalesforceConnectionResult | null>(null)
+  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null)
+  const [isConnectionValid, setIsConnectionValid] = useState(false)
+
+  // Load saved configuration on component mount
+  useEffect(() => {
+    const saved = loadSalesforceConfig()
+    if (saved.config) {
+      updateSystem({ 
+        instanceUrl: saved.config.instanceUrl,
+        accessToken: saved.config.accessToken
+      })
+    }
+    if (saved.organization) {
+      setOrganizationInfo(saved.organization)
+      setIsConnectionValid(true)
+      setConnectionResult({ success: true, organization: saved.organization })
+    }
+  }, [updateSystem])
+
   const themeOptions = [
     { value: 'system', label: 'System', icon: Monitor },
     { value: 'light', label: 'Light', icon: Sun },
@@ -40,6 +74,75 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     if (!isNaN(interval) && interval > 0) {
       updateSystem({ syncInterval: interval })
     }
+  }
+
+  const handleTestConnection = async () => {
+    if (!system.instanceUrl || !system.accessToken) {
+      setConnectionResult({
+        success: false,
+        error: 'Please provide both Instance URL and Access Token'
+      })
+      return
+    }
+
+    setIsTestingConnection(true)
+    setConnectionResult(null)
+    setIsConnectionValid(false)
+
+    try {
+      const result = await testSalesforceConnection({
+        instanceUrl: system.instanceUrl,
+        accessToken: system.accessToken
+      })
+
+      setConnectionResult(result)
+      
+      if (result.success && result.organization) {
+        setOrganizationInfo(result.organization)
+        setIsConnectionValid(true)
+      } else {
+        setOrganizationInfo(null)
+        setIsConnectionValid(false)
+      }
+    } catch (error) {
+      setConnectionResult({
+        success: false,
+        error: 'Connection test failed'
+      })
+      setOrganizationInfo(null)
+      setIsConnectionValid(false)
+    } finally {
+      setIsTestingConnection(false)
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    if (!isConnectionValid || !organizationInfo) {
+      return
+    }
+
+    try {
+      saveSalesforceConfig(
+        {
+          instanceUrl: system.instanceUrl,
+          accessToken: system.accessToken
+        },
+        organizationInfo
+      )
+      
+      // Show success feedback (you might want to add a toast notification here)
+      console.log('Settings saved successfully')
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+    }
+  }
+
+  const handleReset = () => {
+    clearSalesforceConfig()
+    setConnectionResult(null)
+    setOrganizationInfo(null)
+    setIsConnectionValid(false)
+    resetSettings()
   }
 
   return (
@@ -84,102 +187,138 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
           <div>
             <h3 className="text-lg font-semibold">System Settings</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Core extension functionality
+              Salesforce connection configuration
             </p>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">
-                Notifications
+                Instance URL
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Enable push notifications
+              <p className="text-xs text-muted-foreground mb-2">
+                Your Salesforce organization URL
               </p>
+              <Input
+                type="url"
+                value={system.instanceUrl || 'https://voithhydro.my.salesforce.com'}
+                onChange={(e) => updateSystem({ instanceUrl: e.target.value })}
+                className="text-xs"
+                placeholder="https://yourorg.my.salesforce.com"
+              />
             </div>
-            <Switch
-              checked={system.notifications}
-              onCheckedChange={(checked) => updateSystem({ notifications: checked })}
-            />
           </div>
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">
-                Sync Interval (minutes)
+                Access Token
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Data synchronization frequency
+              <p className="text-xs text-muted-foreground mb-2">
+                Your Salesforce session ID or OAuth access token
               </p>
+              <textarea
+                value={system.accessToken || ''}
+                onChange={(e) => updateSystem({ accessToken: e.target.value })}
+                className="w-full min-h-[80px] px-3 py-2 text-xs border border-input bg-background rounded-md resize-y"
+                placeholder="Enter your access token here..."
+              />
             </div>
-            <Input
-              type="number"
-              value={system.syncInterval}
-              onChange={(e) => handleSyncIntervalChange(e.target.value)}
-              className="w-20 h-8 text-xs"
-              min="1"
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Runtime Configuration - Read Only */}
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">
-              Runtime Configuration
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Values from app.config.ts (read-only)
-            </p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">
-                Config Chat Status
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Chat setting from runtime config
-              </p>
-            </div>
-            <Badge
-              variant={
-                config.features?.enableChat ? 'default' : 'secondary'
-              }
-              className="text-xs"
+          <Separator />
+
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleTestConnection}
+              disabled={isTestingConnection || !system.instanceUrl || !system.accessToken}
             >
-              {config.features?.enableChat ? 'Enabled' : 'Disabled'}
-            </Badge>
+              {isTestingConnection ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Testing Connection...
+                </>
+              ) : (
+                'Test Connection'
+              )}
+            </Button>
           </div>
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          {/* Connection Status Display */}
+          <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">
-                Config Max Tokens
+                Connection Status
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Token limit from runtime config
+              <p className="text-xs text-muted-foreground mb-2">
+                Current Salesforce organization information
               </p>
             </div>
-            <Badge variant="outline" className="text-xs">
-              {config.features?.maxTokens}
-            </Badge>
+            
+            {connectionResult === null ? (
+              <div className="bg-muted/30 p-3 rounded-md">
+                <p className="text-xs text-muted-foreground text-center">
+                  Click "Test Connection" to verify your credentials
+                </p>
+              </div>
+            ) : connectionResult.success && organizationInfo ? (
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-3 rounded-md space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                    Connection Successful
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Organization Name:</span>
+                  <span className="text-xs font-medium">{organizationInfo.Name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Environment:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {organizationInfo.IsSandbox ? 'Sandbox' : 'Production'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Organization ID:</span>
+                  <span className="text-xs font-mono">{organizationInfo.Id}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3 rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                    Connection Failed
+                  </span>
+                </div>
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  {connectionResult.error || 'Unknown error occurred'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         <Separator />
 
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={resetSettings}>
+          <Button variant="outline" className="flex-1" onClick={handleReset}>
             Reset
           </Button>
-          <Button className="flex-1">Save Changes</Button>
+          <Button 
+            className="flex-1" 
+            onClick={handleSaveChanges}
+            disabled={!isConnectionValid}
+          >
+            Save Changes
+          </Button>
         </div>
       </div>
     </ScrollArea>
