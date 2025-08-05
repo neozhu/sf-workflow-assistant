@@ -9,6 +9,13 @@ interface OrganizationInfo {
   IsSandbox: boolean
 }
 
+interface UserInfo {
+  user_id: string
+  name: string
+  email: string
+  picture: string
+}
+
 interface AppearanceSettings {
   theme: Theme
 }
@@ -19,6 +26,7 @@ interface SystemSettings {
   instanceUrl?: string
   accessToken?: string
   organization?: OrganizationInfo
+  user?: UserInfo
 }
 
 interface UISettings {
@@ -141,6 +149,17 @@ export function useSettings() {
     }
   }
 
+  // Update user info
+  const updateUser = async (user: UserInfo | null) => {
+    const newSettings = { ...system, user: user || undefined }
+    setSystem(newSettings)
+    try {
+      await systemSettings.setValue(newSettings)
+    } catch (error) {
+      console.error('Failed to save user info:', error)
+    }
+  }
+
   return {
     appearance,
     system,
@@ -150,6 +169,7 @@ export function useSettings() {
     updateSystem,
     updateUI,
     updateOrganization,
+    updateUser,
     resetSettings
   }
 } 

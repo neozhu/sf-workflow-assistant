@@ -11,7 +11,7 @@ import { ProfileTab } from './components/ProfileTab'
 import { SettingsTab } from './components/SettingsTab'
 
 function App() {
-  const { appearance, system, ui, loading, updateAppearance, updateSystem, updateUI, updateOrganization, resetSettings } = useSettings()
+  const { appearance, system, ui, loading, updateAppearance, updateSystem, updateUI, updateOrganization, updateUser, resetSettings } = useSettings()
 
   const handleTabChange = (value: string) => {
     updateUI({ activeTab: value })
@@ -87,7 +87,7 @@ function App() {
           </TabsContent>
 
           <TabsContent value="profile" className="flex-1 overflow-hidden">
-            <ProfileTab />
+            <ProfileTab user={system.user} />
           </TabsContent>
 
           <TabsContent value="settings" className="flex-1 overflow-hidden">
@@ -97,6 +97,7 @@ function App() {
               updateAppearance={updateAppearance}
               updateSystem={updateSystem}
               updateOrganization={updateOrganization}
+              updateUser={updateUser}
               resetSettings={resetSettings}
             />
           </TabsContent>

@@ -13,9 +13,17 @@ export interface OrganizationInfo {
   IsSandbox: boolean
 }
 
+export interface UserInfo {
+  user_id: string
+  name: string
+  email: string
+  picture: string
+}
+
 export interface SalesforceConnectionResult {
   success: boolean
   organization?: OrganizationInfo
+  user?: UserInfo
   error?: string
 }
 
@@ -37,11 +45,11 @@ export async function testSalesforceConnection(
     // Clean up instance URL (remove trailing slash)
     const instanceUrl = config.instanceUrl.replace(/\/$/, '')
     
-    // Prepare the SOQL query
+    // Prepare the SOQL query for organization
     const query = encodeURIComponent('SELECT Id, Name, IsSandbox FROM Organization')
     const apiUrl = `${instanceUrl}/services/data/v64.0/query/?q=${query}`
 
-    // Make API request
+    // Make API request for organization
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -83,9 +91,36 @@ export async function testSalesforceConnection(
 
     const organization: OrganizationInfo = data.records[0]
 
+    // Get current user information
+    let user: UserInfo | undefined
+    try {
+      const userInfoUrl = `${instanceUrl}/services/oauth2/userinfo`
+      const userResponse = await fetch(userInfoUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+          'Accept': 'application/json'
+        }
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        user = {
+          user_id: userData.user_id,
+          name: userData.name,
+          email: userData.email,
+          picture: userData.picture
+        }
+      }
+    } catch (userError) {
+      console.warn('Failed to fetch user info:', userError)
+      // Continue without user info
+    }
+
     return {
       success: true,
-      organization
+      organization,
+      user
     }
 
   } catch (error) {
@@ -98,16 +133,18 @@ export async function testSalesforceConnection(
 }
 
 /**
- * Save Salesforce configuration and organization info to local storage
+ * Save Salesforce configuration, organization info and user info to local storage
  */
 export function saveSalesforceConfig(
   config: SalesforceConfig, 
-  organization?: OrganizationInfo
+  organization?: OrganizationInfo,
+  user?: UserInfo
 ): void {
   try {
     const dataToSave = {
       config,
       organization,
+      user,
       lastUpdated: new Date().toISOString()
     }
     
@@ -119,11 +156,12 @@ export function saveSalesforceConfig(
 }
 
 /**
- * Load Salesforce configuration and organization info from local storage
+ * Load Salesforce configuration, organization info and user info from local storage
  */
 export function loadSalesforceConfig(): {
   config?: SalesforceConfig
   organization?: OrganizationInfo
+  user?: UserInfo
   lastUpdated?: string
 } {
   try {

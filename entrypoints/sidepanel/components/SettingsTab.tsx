@@ -14,6 +14,7 @@ import {
   loadSalesforceConfig, 
   clearSalesforceConfig,
   type OrganizationInfo,
+  type UserInfo,
   type SalesforceConnectionResult 
 } from '@/lib/salesforce'
 import {
@@ -32,10 +33,11 @@ interface SettingsTabProps {
   updateAppearance: (data: any) => void
   updateSystem: (data: any) => void
   updateOrganization: (organization: OrganizationInfo | null) => void
+  updateUser: (user: UserInfo | null) => void
   resetSettings: () => void
 }
 
-export function SettingsTab({ appearance, system, updateAppearance, updateSystem, updateOrganization, resetSettings }: SettingsTabProps) {
+export function SettingsTab({ appearance, system, updateAppearance, updateSystem, updateOrganization, updateUser, resetSettings }: SettingsTabProps) {
   const config = useAppConfig()
   const { setTheme } = useTheme({
     theme: appearance.theme,
@@ -46,6 +48,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [connectionResult, setConnectionResult] = useState<SalesforceConnectionResult | null>(null)
   const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null)
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [isConnectionValid, setIsConnectionValid] = useState(false)
 
   // Load saved configuration on component mount
@@ -69,10 +72,20 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     if (orgInfo) {
       setOrganizationInfo(orgInfo)
       setIsConnectionValid(true)
-      setConnectionResult({ success: true, organization: orgInfo })
+      setConnectionResult({ success: true, organization: orgInfo, user: saved.user })
       // Update organization info in global state if loaded from local storage
       if (saved.organization) {
         updateOrganization(orgInfo)
+      }
+    }
+
+    // Load user info from saved config or global state
+    const userInfoData = saved.user || system.user
+    if (userInfoData) {
+      setUserInfo(userInfoData)
+      // Update user info in global state if loaded from local storage
+      if (saved.user) {
+        updateUser(userInfoData)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,6 +131,12 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         // Update organization info in global state
         updateOrganization(result.organization)
         
+        // Update user info if available
+        if (result.user) {
+          setUserInfo(result.user)
+          updateUser(result.user)
+        }
+        
         // Auto-save successful connection to local storage
         try {
           saveSalesforceConfig(
@@ -125,7 +144,8 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
               instanceUrl: system.instanceUrl,
               accessToken: system.accessToken
             },
-            result.organization
+            result.organization,
+            result.user || undefined
           )
           console.log('Connection info auto-saved successfully')
         } catch (saveError) {
@@ -133,8 +153,10 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         }
       } else {
         setOrganizationInfo(null)
+        setUserInfo(null)
         setIsConnectionValid(false)
         updateOrganization(null)
+        updateUser(null)
       }
     } catch (error) {
       setConnectionResult({
@@ -142,6 +164,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         error: 'Connection test failed'
       })
       setOrganizationInfo(null)
+      setUserInfo(null)
       setIsConnectionValid(false)
     } finally {
       setIsTestingConnection(false)
@@ -159,7 +182,8 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
           instanceUrl: system.instanceUrl,
           accessToken: system.accessToken
         },
-        organizationInfo
+        organizationInfo,
+        userInfo || undefined
       )
       
       // Show success feedback (you might want to add a toast notification here)
@@ -173,6 +197,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     clearSalesforceConfig()
     setConnectionResult(null)
     setOrganizationInfo(null)
+    setUserInfo(null)
     setIsConnectionValid(false)
     resetSettings()
   }
