@@ -5,6 +5,10 @@ interface ApplicantInfo {
   email: string;
   phone: string;
   isUserApplicant: boolean;
+  division: string;
+  system: string;
+  location: string;
+  businessArea: string;
 }
 
 // Function to extract applicant information from the workflow page
@@ -43,12 +47,29 @@ function extractApplicantInfo(): ApplicantInfo | null {
       }
     }
 
+    // Extract Details section information
+    const divisionInput = document.querySelector('input[name="MainData.Division"]') as HTMLInputElement;
+    const division = divisionInput?.value?.trim() || '';
+
+    const systemInput = document.querySelector('input[name="MainData.System"]') as HTMLInputElement;
+    const system = systemInput?.value?.trim() || '';
+
+    const locationInput = document.querySelector('input[name="MainData.Location"]') as HTMLInputElement;
+    const location = locationInput?.value?.trim() || '';
+
+    const businessAreaInput = document.querySelector('input[name="MainData.Area"]') as HTMLInputElement;
+    const businessArea = businessAreaInput?.value?.trim() || '';
+
     const applicantInfo: ApplicantInfo = {
       name,
       shortname,
       email,
       phone,
-      isUserApplicant
+      isUserApplicant,
+      division,
+      system,
+      location,
+      businessArea
     };
 
     console.log('Extracted applicant info:', applicantInfo);

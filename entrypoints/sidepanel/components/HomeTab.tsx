@@ -21,6 +21,10 @@ interface ApplicantInfoData {
   email: string;
   phone: string;
   isUserApplicant: boolean;
+  division: string;
+  system: string;
+  location: string;
+  businessArea: string;
 }
 
 export function HomeTab() {
