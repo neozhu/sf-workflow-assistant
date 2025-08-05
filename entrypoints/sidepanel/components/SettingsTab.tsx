@@ -31,10 +31,11 @@ interface SettingsTabProps {
   system: any
   updateAppearance: (data: any) => void
   updateSystem: (data: any) => void
+  updateOrganization: (organization: OrganizationInfo | null) => void
   resetSettings: () => void
 }
 
-export function SettingsTab({ appearance, system, updateAppearance, updateSystem, resetSettings }: SettingsTabProps) {
+export function SettingsTab({ appearance, system, updateAppearance, updateSystem, updateOrganization, resetSettings }: SettingsTabProps) {
   const config = useAppConfig()
   const { setTheme } = useTheme({
     theme: appearance.theme,
@@ -55,13 +56,27 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         instanceUrl: saved.config.instanceUrl,
         accessToken: saved.config.accessToken
       })
+    } else {
+      // Set default values if no saved configuration exists
+      updateSystem({ 
+        instanceUrl: system.instanceUrl || 'https://voithhydro.my.salesforce.com',
+        accessToken: system.accessToken || ''
+      })
     }
-    if (saved.organization) {
-      setOrganizationInfo(saved.organization)
+    
+    // Load organization info from saved config or global state
+    const orgInfo = saved.organization || system.organization
+    if (orgInfo) {
+      setOrganizationInfo(orgInfo)
       setIsConnectionValid(true)
-      setConnectionResult({ success: true, organization: saved.organization })
+      setConnectionResult({ success: true, organization: orgInfo })
+      // Update organization info in global state if loaded from local storage
+      if (saved.organization) {
+        updateOrganization(orgInfo)
+      }
     }
-  }, [updateSystem])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const themeOptions = [
     { value: 'system', label: 'System', icon: Monitor },
@@ -100,9 +115,26 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
       if (result.success && result.organization) {
         setOrganizationInfo(result.organization)
         setIsConnectionValid(true)
+        // Update organization info in global state
+        updateOrganization(result.organization)
+        
+        // Auto-save successful connection to local storage
+        try {
+          saveSalesforceConfig(
+            {
+              instanceUrl: system.instanceUrl,
+              accessToken: system.accessToken
+            },
+            result.organization
+          )
+          console.log('Connection info auto-saved successfully')
+        } catch (saveError) {
+          console.error('Failed to auto-save connection info:', saveError)
+        }
       } else {
         setOrganizationInfo(null)
         setIsConnectionValid(false)
+        updateOrganization(null)
       }
     } catch (error) {
       setConnectionResult({
@@ -201,7 +233,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
               </p>
               <Input
                 type="url"
-                value={system.instanceUrl || 'https://voithhydro.my.salesforce.com'}
+                value={system.instanceUrl || ''}
                 onChange={(e) => updateSystem({ instanceUrl: e.target.value })}
                 className="text-xs"
                 placeholder="https://yourorg.my.salesforce.com"

@@ -3,6 +3,12 @@ import { useEffect, useState } from 'react'
 
 type Theme = 'system' | 'light' | 'dark'
 
+interface OrganizationInfo {
+  Id: string
+  Name: string
+  IsSandbox: boolean
+}
+
 interface AppearanceSettings {
   theme: Theme
 }
@@ -10,6 +16,9 @@ interface AppearanceSettings {
 interface SystemSettings {
   notifications: boolean
   syncInterval: number
+  instanceUrl?: string
+  accessToken?: string
+  organization?: OrganizationInfo
 }
 
 interface UISettings {
@@ -53,6 +62,7 @@ export function useSettings() {
         ])
         
         setAppearance(appearanceData)
+        // Ensure system data includes any previously saved organization info
         setSystem(systemData)
         setUI(uiData)
       } catch (error) {
@@ -120,6 +130,17 @@ export function useSettings() {
     }
   }
 
+  // Update organization info
+  const updateOrganization = async (organization: OrganizationInfo | null) => {
+    const newSettings = { ...system, organization: organization || undefined }
+    setSystem(newSettings)
+    try {
+      await systemSettings.setValue(newSettings)
+    } catch (error) {
+      console.error('Failed to save organization info:', error)
+    }
+  }
+
   return {
     appearance,
     system,
@@ -128,6 +149,7 @@ export function useSettings() {
     updateAppearance,
     updateSystem,
     updateUI,
+    updateOrganization,
     resetSettings
   }
 } 
