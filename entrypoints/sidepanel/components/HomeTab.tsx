@@ -11,8 +11,18 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, UserCheck, UserX, AlertCircle, Loader2 } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { searchSalesforceUsers, loadSalesforceConfig, UserInfo } from '@/lib/salesforce'
+import { ApplicantInfo } from './ApplicantInfo'
+
+// Types for applicant information
+interface ApplicantInfoData {
+  name: string;
+  shortname: string;
+  email: string;
+  phone: string;
+  isUserApplicant: boolean;
+}
 
 export function HomeTab() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -20,10 +30,11 @@ export function HomeTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const [applicantInfo, setApplicantInfo] = useState<ApplicantInfoData | null>(null)
 
-  // Handle search functionality
-  const handleSearch = useCallback(async () => {
-    if (!searchTerm.trim()) {
+  // Handle search with specific term
+  const handleSearchWithTerm = useCallback(async (term: string) => {
+    if (!term.trim()) {
       setError('Search term cannot be empty')
       return
     }
@@ -42,7 +53,7 @@ export function HomeTab() {
       }
 
       // Search users
-      const result = await searchSalesforceUsers(config, searchTerm.trim())
+      const result = await searchSalesforceUsers(config, term.trim())
       
       if (result.success && result.users) {
         setUsers(result.users)
@@ -57,7 +68,41 @@ export function HomeTab() {
     } finally {
       setIsLoading(false)
     }
-  }, [searchTerm])
+  }, [])
+
+  // Listen for messages from background script
+  useEffect(() => {
+    const messageListener = (message: any) => {
+      console.log('HomeTab received message:', message);
+      
+      if (message.type === 'WORKFLOW_APPLICANT_INFO' && message.data) {
+        const info = message.data as ApplicantInfoData;
+        setApplicantInfo(info);
+        
+        // Auto-fill search term with shortname and trigger search
+        if (info.shortname) {
+          setSearchTerm(info.shortname);
+          // Trigger search automatically
+          setTimeout(() => {
+            handleSearchWithTerm(info.shortname);
+          }, 100);
+        }
+      }
+    };
+
+    // Add message listener
+    browser.runtime.onMessage.addListener(messageListener);
+
+    return () => {
+      // Remove message listener on cleanup
+      browser.runtime.onMessage.removeListener(messageListener);
+    };
+  }, [handleSearchWithTerm]);
+
+  // Handle search functionality
+  const handleSearch = useCallback(async () => {
+    return handleSearchWithTerm(searchTerm);
+  }, [searchTerm, handleSearchWithTerm])
 
   // Handle Enter key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -186,8 +231,13 @@ export function HomeTab() {
           </div>
         )}
 
+        {/* Applicant Information Section */}
+        {applicantInfo && (
+          <ApplicantInfo applicantInfo={applicantInfo} />
+        )}
+
         {/* Welcome message when no search performed */}
-        {!hasSearched && users.length === 0 && !isLoading && (
+        {!hasSearched && users.length === 0 && !isLoading && !applicantInfo && (
           <div className="text-center py-8 text-muted-foreground">
             <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">Search Salesforce Users</h3>

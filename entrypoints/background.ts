@@ -19,4 +19,22 @@ export default defineBackground(() => {
       openPanelOnActionClick: true
     });
   });
+
+  // Handle messages from content script
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Background received message:', message);
+
+    if (message.type === 'WORKFLOW_APPLICANT_INFO') {
+      // Forward the message to the sidepanel
+      browser.runtime.sendMessage({
+        type: 'WORKFLOW_APPLICANT_INFO',
+        data: message.data,
+        tabId: sender.tab?.id
+      }).catch(error => {
+        console.error('Error forwarding message to sidepanel:', error);
+      });
+    }
+
+    return true; // Indicates we will send a response asynchronously
+  });
 });

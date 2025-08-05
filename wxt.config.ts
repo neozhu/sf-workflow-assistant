@@ -17,7 +17,8 @@ export default defineConfig({
       'https://*.salesforce.com/*',
       'https://*.force.com/*',
       'https://*.my.salesforce.com/*',
-      'https://*.lightning.force.com/*'
+      'https://*.lightning.force.com/*',
+      'https://workflow.voith.com/*'
     ],
     side_panel: {
       default_path: 'sidepanel.html'
