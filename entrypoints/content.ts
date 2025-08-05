@@ -69,41 +69,22 @@ function sendApplicantInfoToSidepanel(applicantInfo: ApplicantInfo) {
   });
 }
 
-// Function to check if current page is a workflow page and extract info
-function checkAndExtractWorkflowInfo() {
+// Function to manually extract workflow info when called
+function manualExtractWorkflowInfo() {
   const currentUrl = window.location.href;
   const isWorkflowPage = currentUrl.includes('workflow.voith.com/wfManagementsite/Viewer');
   
   if (isWorkflowPage) {
-    console.log('Workflow page detected:', currentUrl);
+    console.log('Manual workflow info extraction requested:', currentUrl);
     
-    // Wait for the page content to load
-    const observer = new MutationObserver((mutations, obs) => {
-      const subscriberDataDiv = document.querySelector('div[name="SubscriberData"]');
-      if (subscriberDataDiv) {
-        obs.disconnect();
-        
-        // Extract applicant info
-        const applicantInfo = extractApplicantInfo();
-        if (applicantInfo && applicantInfo.shortname) {
-          sendApplicantInfoToSidepanel(applicantInfo);
-        }
-      }
-    });
-
-    // Start observing
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    // Also try immediate extraction in case content is already loaded
-    setTimeout(() => {
-      const applicantInfo = extractApplicantInfo();
-      if (applicantInfo && applicantInfo.shortname) {
-        sendApplicantInfoToSidepanel(applicantInfo);
-      }
-    }, 1000);
+    const applicantInfo = extractApplicantInfo();
+    if (applicantInfo && applicantInfo.shortname) {
+      sendApplicantInfoToSidepanel(applicantInfo);
+    } else {
+      console.log('No applicant info found or data incomplete');
+    }
+  } else {
+    console.log('Not a workflow page, extraction skipped');
   }
 }
 
@@ -112,17 +93,13 @@ export default defineContentScript({
   main() {
     console.log('Workflow Assistant content script loaded');
     
-    // Check on initial load
-    checkAndExtractWorkflowInfo();
-    
-    // Also check on URL changes (for SPAs)
-    let lastUrl = location.href;
-    new MutationObserver(() => {
-      const url = location.href;
-      if (url !== lastUrl) {
-        lastUrl = url;
-        setTimeout(() => checkAndExtractWorkflowInfo(), 500);
+    // Listen for messages from background script (context menu clicks)
+    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'EXTRACT_WORKFLOW_INFO') {
+        console.log('Context menu extract workflow info triggered');
+        manualExtractWorkflowInfo();
+        sendResponse({ success: true });
       }
-    }).observe(document, { subtree: true, childList: true });
+    });
   },
 });
