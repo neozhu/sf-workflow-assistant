@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { UserCheck, UserX, Loader2 } from 'lucide-react'
+import { UserCheck, UserX, Loader2, ExternalLink } from 'lucide-react'
 import { UserInfo, toggleUserActiveStatus, loadSalesforceConfig } from '@/lib/salesforce'
 import { useState } from 'react'
 
@@ -12,10 +12,42 @@ interface UserCardProps {
   onStatusUpdate?: (updatedUser: UserInfo) => void
 }
 
+// Helper function to generate Salesforce user page URL
+function getSalesforceUserUrl(instanceUrl: string, userId: string): string {
+  try {
+    // Extract domain from instance URL (e.g., "https://voithhydro.my.salesforce.com" -> "voithhydro")
+    const url = new URL(instanceUrl)
+    const hostParts = url.hostname.split('.')
+    const domain = hostParts[0] // Get the first part (voithhydro)
+    
+    // Construct Lightning URL
+    return `https://${domain}.lightning.force.com/lightning/setup/ManageUsers/page?address=%2F${userId}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`
+  } catch (error) {
+    console.error('Failed to generate Salesforce user URL:', error)
+    return '#'
+  }
+}
+
 export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState(user)
+
+  // Get Salesforce user URL
+  const getSalesforceUrl = () => {
+    const { config } = loadSalesforceConfig()
+    if (config?.instanceUrl) {
+      return getSalesforceUserUrl(config.instanceUrl, currentUser.user_id)
+    }
+    return '#'
+  }
+
+  const handleOpenSalesforceUser = () => {
+    const url = getSalesforceUrl()
+    if (url !== '#') {
+      window.open(url, '_blank')
+    }
+  }
 
   const handleToggleActivation = async () => {
     console.log('handleToggleActivation called', { onActivateToggle: !!onActivateToggle })
@@ -88,9 +120,21 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
           <div className="space-y-1">
             {/* First row: Username and Status */}
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm truncate">
-                {currentUser.name} {currentUser.alias && `(${currentUser.alias})`}
-              </span>
+              <div className="flex items-center gap-1">
+                <span 
+                  className="font-medium text-sm truncate text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                  onClick={handleOpenSalesforceUser}
+                  title="Open in Salesforce"
+                >
+                  {currentUser.name} {currentUser.alias && `(${currentUser.alias})`}
+                </span>
+                <div title="Open in Salesforce">
+                  <ExternalLink 
+                    className="h-3 w-3 text-blue-600 hover:text-blue-800 cursor-pointer" 
+                    onClick={handleOpenSalesforceUser}
+                  />
+                </div>
+              </div>
               <Badge 
                 variant={currentUser.is_active ? 'default' : 'secondary'}
                 className="text-xs"
