@@ -157,6 +157,11 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
             <div className="text-xs text-muted-foreground truncate">
               Profile: {currentUser.profile_name || 'N/A'}
             </div>
+            
+            {/* Fifth row: Last Modified By */}
+            <div className="text-xs text-muted-foreground truncate">
+              Last Modified By: {currentUser.last_modified_by || 'N/A'}
+            </div>
 
             {/* Error message */}
             {error && (

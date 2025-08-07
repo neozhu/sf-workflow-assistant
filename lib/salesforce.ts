@@ -23,6 +23,7 @@ export interface UserInfo {
   profile_id?: string
   profile_name?: string
   is_active?: boolean
+  last_modified_by?: string
 }
 
 export interface SalesforceConnectionResult {
@@ -235,7 +236,8 @@ export async function searchSalesforceUsers(
         ProfileId, 
         Profile.Name, 
         IsActive,
-        MediumPhotoUrl
+        MediumPhotoUrl,
+        LastModifiedBy.Name
       FROM User 
       WHERE 
         (Alias LIKE '%${cleanSearchTerm}%' 
@@ -291,7 +293,8 @@ export async function searchSalesforceUsers(
       division: record.Division__c,
       profile_id: record.ProfileId,
       profile_name: record.Profile?.Name,
-      is_active: record.IsActive
+      is_active: record.IsActive,
+      last_modified_by: record.LastModifiedBy?.Name
     }))
 
     return {
