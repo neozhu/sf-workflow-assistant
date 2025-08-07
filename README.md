@@ -62,29 +62,36 @@ Before using the extension, you need to set up Salesforce CLI and obtain an acce
    - Paste the Access Token and Instance URL
    - Click "Test Connection" to verify
 
+
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/neozhu/sf-workflow-assistant.git
-   cd sf-workflow-assistant
-   ```
+#### 1. Get the Code
 
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
+```bash
+git clone https://github.com/neozhu/sf-workflow-assistant.git
+cd sf-workflow-assistant
+```
 
-3. **Start development**
-   ```bash
-   pnpm dev
-   ```
+#### 2. Install Dependencies
 
-4. **Load extension in browser**
-   - Open `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked extension"
-   - Select the `.output/chrome-mv3` folder
+```bash
+pnpm install
+```
+
+#### 3. Build the Extension (Edge Example)
+
+```bash
+pnpm build:edge
+```
+
+#### 4. Load the Extension in Microsoft Edge
+
+1. Open `edge://extensions/` in your Edge browser.
+2. Enable **Developer mode** (toggle in the top right corner).
+3. Click **Load unpacked**.
+4. Select the `sf-workflow-assistant\.output\edge-mv3` folder.
+
+The extension should now appear in your Edge browser and be ready for use.
 
 ### Usage
 
