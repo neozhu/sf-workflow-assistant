@@ -217,25 +217,54 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
             {/* User Role selection (required) */}
             <div className="space-y-2">
               <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
-              <div className="flex flex-wrap gap-2">
-                {USER_ROLES.map(r => (
-                  <Badge
-                    key={r.Id}
-                    onClick={() => setSelectedRoleId(r.Id)}
-                    variant={selectedRoleId === r.Id ? 'default' : 'secondary'}
-                    className={`cursor-pointer ${selectedRoleId === r.Id ? 'ring-2 ring-primary' : ''}`}
-                  >
-                    {r.Name}
-                  </Badge>
-                ))}
-              </div>
+              {(() => {
+                const roles = [...USER_ROLES].sort((a, b) => a.Name.localeCompare(b.Name))
+                const groups = {
+                  'DV -': [] as typeof USER_ROLES,
+                  'VH -': [] as typeof USER_ROLES,
+                  'VP -': [] as typeof USER_ROLES,
+                  'VT -': [] as typeof USER_ROLES,
+                  Others: [] as typeof USER_ROLES,
+                }
+                for (const r of roles) {
+                  if (r.Name.startsWith('DV -')) groups['DV -'].push(r)
+                  else if (r.Name.startsWith('VH -')) groups['VH -'].push(r)
+                  else if (r.Name.startsWith('VP -')) groups['VP -'].push(r)
+                  else if (r.Name.startsWith('VT -')) groups['VT -'].push(r)
+                  else groups.Others.push(r)
+                }
+                const order = ['DV -', 'VH -', 'VP -', 'VT -', 'Others'] as const
+                return (
+                  <div className="space-y-2">
+                    {order.map((key) => (
+                      groups[key].length > 0 ? (
+                        <div key={key} className="space-y-1">
+                          <div className="text-[11px] text-muted-foreground">{key}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {groups[key].map((r) => (
+                              <Badge
+                                key={r.Id}
+                                onClick={() => setSelectedRoleId(r.Id)}
+                                variant={selectedRoleId === r.Id ? 'default' : 'secondary'}
+                                className={`cursor-pointer ${selectedRoleId === r.Id ? 'ring-2 ring-primary' : ''}`}
+                              >
+                                {r.Name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Profile selection (required) */}
             <div className="space-y-2">
               <div className="text-xs font-medium">Profile <span className="text-destructive">*</span></div>
               <div className="flex flex-wrap gap-2">
-                {PROFILES.map(p => (
+                {[...PROFILES].sort((a, b) => a.Name.localeCompare(b.Name)).map(p => (
                   <Badge
                     key={p.Id}
                     onClick={() => setSelectedProfileId(p.Id)}
