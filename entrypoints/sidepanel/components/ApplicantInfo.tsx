@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { PROFILES, USER_ROLES, BUSINESS_LINES, USER_LICENSES } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
@@ -30,69 +30,10 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [selectedBusinessLine, setSelectedBusinessLine] = useState<string | null>(null)
-  const [selectedUserLicenseId, setSelectedUserLicenseId] = useState<string | null>(USER_LICENSES[0]?.Id || null)
+  const [selectedUserLicenseId, setSelectedUserLicenseId] = useState<string | null>(null)
   const [creating, setCreating] = useState<boolean>(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
-
-  const workAreasText = (applicantInfo.workAreas || []).join(' ').toLowerCase()
-  const locationText = (applicantInfo.location || '').toLowerCase()
-  const divisionText = (applicantInfo.division || '').toLowerCase()
-
-  const divisionTokens = useMemo(() => {
-    const raw = divisionText.replace(/[^a-zA-Z\s]/g, ' ')
-    const tokens = raw.split(/\s+/).filter(t => t.length >= 2)
-    return tokens
-  }, [divisionText])
-
-  const recommendedProfiles = useMemo(() => {
-    const scoreForProfile = (name: string): number => {
-      const n = name.toLowerCase()
-      let score = 0
-      if (workAreasText.includes('service') && n.includes('service')) score += 5
-      if (workAreasText.includes('mdg') && n.includes('mdg')) score += 5
-      if (workAreasText.includes('sales') && (n.includes('sales') || n.includes('standard'))) score += 4
-      if (workAreasText.includes('manager') && n.includes('manager')) score += 4
-      if (workAreasText.includes('keyuser') && n.includes('keyuser')) score += 3
-      if (workAreasText.includes('read') && n.includes('read only')) score += 3
-      if (workAreasText.includes('vp') && n.includes('vp')) score += 2
-      if (workAreasText.includes('restricted') && n.includes('restricted')) score += 2
-      // consider division tokens in profile name
-      for (const tk of divisionTokens) {
-        if (tk && n.includes(tk)) score += 2
-      }
-      return score
-    }
-    const withScores = PROFILES.map(p => ({ ...p, _score: scoreForProfile(p.Name) }))
-    withScores.sort((a, b) => b._score - a._score || a.Name.localeCompare(b.Name))
-    const top = withScores.filter(x => x._score > 0).slice(0, 8)
-    const rest = withScores.filter(x => x._score === 0)
-    return { top, rest }
-  }, [workAreasText, divisionTokens])
-
-  const recommendedRoles = useMemo(() => {
-    const scoreForRole = (name: string): number => {
-      const n = name.toLowerCase()
-      let score = 0
-      if (/(apac|asia|china)/.test(locationText) && /(apac|asia|china)/.test(n)) score += 6
-      if (/(emea|europe)/.test(locationText) && /(emea)/.test(n)) score += 6
-      if (/(north\s*america|usa|canada)/.test(locationText) && /(america north|north america)/.test(n)) score += 6
-      if (/(south\s*america|latam|brazil|argentina)/.test(locationText) && /(america south|south america)/.test(n)) score += 6
-      if (/global/.test(locationText) && /global/.test(n)) score += 5
-      if (/manager/.test(workAreasText) && /manager/.test(n)) score += 2
-      if (!/manager/.test(workAreasText) && /user/.test(n)) score += 1
-      // consider division tokens in role name
-      for (const tk of divisionTokens) {
-        if (tk && n.includes(tk)) score += 2
-      }
-      return score
-    }
-    const withScores = USER_ROLES.map(r => ({ ...r, _score: scoreForRole(r.Name) }))
-    withScores.sort((a, b) => b._score - a._score || a.Name.localeCompare(b.Name))
-    const top = withScores.filter(x => x._score > 0).slice(0, 8)
-    const rest = withScores.filter(x => x._score === 0)
-    return { top, rest }
-  }, [locationText, workAreasText, divisionTokens])
 
   const handleCreate = async () => {
     try {
@@ -254,31 +195,49 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
 
         {canCreate && expanded && (
           <div className="mt-3 space-y-3 border-t pt-3">
-            <div className="text-xs text-muted-foreground">Select a Profile and optionally a User Role. Recommendations are based on Work Scopes and Location.</div>
+            <div className="text-xs text-muted-foreground">Select User License, User Role, Profile, and Business Line. All fields are required.</div>
+
+            {/* User License selection (required) */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium">User License <span className="text-destructive">*</span></div>
+              <div className="flex flex-wrap gap-2">
+                {USER_LICENSES.map((l) => (
+                  <Badge
+                    key={l.Id}
+                    onClick={() => setSelectedUserLicenseId(l.Id)}
+                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {l.Name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* User Role selection (required) */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
+              <div className="flex flex-wrap gap-2">
+                {USER_ROLES.map(r => (
+                  <Badge
+                    key={r.Id}
+                    onClick={() => setSelectedRoleId(r.Id)}
+                    className={`cursor-pointer ${selectedRoleId === r.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {r.Name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Profile selection (required) */}
             <div className="space-y-2">
               <div className="text-xs font-medium">Profile <span className="text-destructive">*</span></div>
-              {recommendedProfiles.top.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {recommendedProfiles.top.map(p => (
-                    <Badge
-                      key={p.Id}
-                      onClick={() => setSelectedProfileId(p.Id)}
-                      className={`cursor-pointer ${selectedProfileId === p.Id ? 'bg-primary text-primary-foreground' : ''}`}
-                    >
-                      {p.Name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
               <div className="flex flex-wrap gap-2">
-                {recommendedProfiles.rest.map(p => (
+                {PROFILES.map(p => (
                   <Badge
                     key={p.Id}
-                    variant="secondary"
                     onClick={() => setSelectedProfileId(p.Id)}
-                    className={`cursor-pointer ${selectedProfileId === p.Id ? 'ring-2 ring-primary' : ''}`}
+                    className={`cursor-pointer ${selectedProfileId === p.Id ? 'bg-primary text-primary-foreground' : ''}`}
                   >
                     {p.Name}
                   </Badge>
@@ -297,52 +256,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                     className={`cursor-pointer ${selectedBusinessLine === b ? 'bg-primary text-primary-foreground' : ''}`}
                   >
                     {b}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Role selection (required) */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
-              {recommendedRoles.top.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {recommendedRoles.top.map(r => (
-                    <Badge
-                      key={r.Id}
-                      onClick={() => setSelectedRoleId(r.Id)}
-                      className={`cursor-pointer ${selectedRoleId === r.Id ? 'bg-primary text-primary-foreground' : ''}`}
-                    >
-                      {r.Name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                {recommendedRoles.rest.map(r => (
-                  <Badge
-                    key={r.Id}
-                    variant="secondary"
-                    onClick={() => setSelectedRoleId(r.Id)}
-                    className={`cursor-pointer ${selectedRoleId === r.Id ? 'ring-2 ring-primary' : ''}`}
-                  >
-                    {r.Name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* User License selection (required) */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium">User License <span className="text-destructive">*</span></div>
-              <div className="flex flex-wrap gap-2">
-                {USER_LICENSES.map((l) => (
-                  <Badge
-                    key={l.Id}
-                    onClick={() => setSelectedUserLicenseId(l.Id)}
-                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'bg-primary text-primary-foreground' : ''}`}
-                  >
-                    {l.Name}
                   </Badge>
                 ))}
               </div>
