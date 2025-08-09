@@ -33,6 +33,127 @@ export interface SalesforceConnectionResult {
   error?: string
 }
 
+export interface CreateSalesforceUserInput {
+  name: string
+  email: string
+  alias?: string
+  phone?: string
+  profileId: string
+  userRoleId?: string
+  timeZoneSidKey?: string
+  localeSidKey?: string
+  emailEncodingKey?: string
+  languageLocaleKey?: string
+}
+
+export interface CreateSalesforceUserResult {
+  success: boolean
+  userId?: string
+  error?: string
+}
+
+function generateAliasFromNameOrEmail(name: string, email: string, preferredAlias?: string): string {
+  if (preferredAlias && preferredAlias.trim().length > 0) {
+    return preferredAlias.trim().slice(0, 8)
+  }
+
+  const clean = (s: string) => s.replace(/[^a-zA-Z]/g, '')
+  let alias = ''
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) {
+    alias = (clean(parts[0]).charAt(0) + clean(parts[parts.length - 1])).toLowerCase()
+  } else if (parts.length === 1) {
+    alias = clean(parts[0]).toLowerCase()
+  }
+  if (!alias || alias.length === 0) {
+    alias = clean(email.split('@')[0]).toLowerCase()
+  }
+  if (!alias || alias.length === 0) {
+    alias = 'user'
+  }
+  return alias.slice(0, 8)
+}
+
+function splitName(name: string): { firstName?: string; lastName: string } {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) {
+    return { lastName: 'User' }
+  }
+  if (parts.length === 1) {
+    return { lastName: parts[0] }
+  }
+  const lastName = parts.pop() as string
+  const firstName = parts.join(' ')
+  return { firstName, lastName }
+}
+
+/**
+ * Create a Salesforce User
+ */
+export async function createSalesforceUser(
+  config: SalesforceConfig,
+  input: CreateSalesforceUserInput
+): Promise<CreateSalesforceUserResult> {
+  try {
+    if (!config.instanceUrl || !config.accessToken) {
+      return { success: false, error: 'Instance URL and Access Token are required' }
+    }
+    if (!input.email || !input.profileId || !input.name) {
+      return { success: false, error: 'Name, Email and ProfileId are required' }
+    }
+
+    const instanceUrl = config.instanceUrl.replace(/\/$/, '')
+    const { firstName, lastName } = splitName(input.name)
+    const alias = generateAliasFromNameOrEmail(input.name, input.email, input.alias)
+
+    const payload: Record<string, unknown> = {
+      Username: input.email,
+      Email: input.email,
+      Alias: alias,
+      LastName: lastName,
+      ProfileId: input.profileId,
+      TimeZoneSidKey: input.timeZoneSidKey || 'GMT',
+      LocaleSidKey: input.localeSidKey || 'en_US',
+      EmailEncodingKey: input.emailEncodingKey || 'UTF-8',
+      LanguageLocaleKey: input.languageLocaleKey || 'en_US'
+    }
+    if (firstName) payload.FirstName = firstName
+    if (input.userRoleId) payload.UserRoleId = input.userRoleId
+    if (input.phone) payload.Phone = input.phone
+
+    const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      try {
+        const err = await response.json()
+        if (err && Array.isArray(err) && err[0]?.message) {
+          errorMessage = err[0].message
+        } else if (typeof err?.message === 'string') {
+          errorMessage = err.message
+        }
+      } catch {}
+      return { success: false, error: errorMessage }
+    }
+
+    const data = await response.json()
+    return { success: true, userId: data.id }
+  } catch (error) {
+    console.error('Salesforce user creation failed:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' }
+  }
+}
+
+
 /**
  * Test Salesforce connection and retrieve organization information
  */
