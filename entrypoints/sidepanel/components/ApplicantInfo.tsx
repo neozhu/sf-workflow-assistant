@@ -220,7 +220,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
             <div className="space-y-2 mt-3">
               <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
               <div className="text-[11px] text-muted-foreground">Defines the user's position in the Salesforce role hierarchy and affects record visibility via org-wide defaults, the role hierarchy, and sharing rules. Choose exactly one role.</div>
-              <div className="text-[11px] text-muted-foreground">Groups (DV / VH / VP / VT) are for easier scanning.</div>
               {(() => {
                 const roles = [...USER_ROLES].sort((a, b) => a.Name.localeCompare(b.Name))
                 const groups = {
