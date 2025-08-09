@@ -40,10 +40,13 @@ export interface CreateSalesforceUserInput {
   phone?: string
   profileId: string
   userRoleId?: string
+  userLicenseId?: string
   timeZoneSidKey?: string
   localeSidKey?: string
   emailEncodingKey?: string
   languageLocaleKey?: string
+  division?: string
+  businessLine?: string
 }
 
 export interface CreateSalesforceUserResult {
@@ -74,17 +77,39 @@ function generateAliasFromNameOrEmail(name: string, email: string, preferredAlia
   return alias.slice(0, 8)
 }
 
-function splitName(name: string): { firstName?: string; lastName: string } {
+function splitNameFromEmailFallback(name: string, email: string): { firstName?: string; lastName: string } {
+  const clean = (s: string) => s.replace(/[^a-zA-Z]/g, ' ').trim()
   const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) {
-    return { lastName: 'User' }
+  if (parts.length >= 2) {
+    const lastName = parts.pop() as string
+    return { firstName: parts.join(' '), lastName }
+  }
+  // try parse from email: firstname.lastname@...
+  const local = email.split('@')[0] || ''
+  const emailParts = clean(local).split(/\s+|\./).filter(Boolean)
+  if (emailParts.length >= 2) {
+    return { firstName: emailParts[0], lastName: emailParts.slice(1).join(' ') }
   }
   if (parts.length === 1) {
     return { lastName: parts[0] }
   }
-  const lastName = parts.pop() as string
-  const firstName = parts.join(' ')
-  return { firstName, lastName }
+  return { lastName: 'User' }
+}
+
+async function resolveSalesforceUserLicenseId(config: SalesforceConfig, licenseName = 'Salesforce'): Promise<string | undefined> {
+  try {
+    const instanceUrl = config.instanceUrl.replace(/\/$/, '')
+    const soql = encodeURIComponent(`SELECT Id, Name FROM UserLicense WHERE Name = '${licenseName}' LIMIT 1`)
+    const apiUrl = `${instanceUrl}/services/data/v64.0/query/?q=${soql}`
+    const res = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${config.accessToken}`, Accept: 'application/json' }
+    })
+    if (!res.ok) return undefined
+    const data = await res.json()
+    return data.records?.[0]?.Id
+  } catch {
+    return undefined
+  }
 }
 
 /**
@@ -103,12 +128,13 @@ export async function createSalesforceUser(
     }
 
     const instanceUrl = config.instanceUrl.replace(/\/$/, '')
-    const { firstName, lastName } = splitName(input.name)
+    const { firstName, lastName } = splitNameFromEmailFallback(input.name, input.email)
     const alias = generateAliasFromNameOrEmail(input.name, input.email, input.alias)
 
     const payload: Record<string, unknown> = {
       Username: input.email,
       Email: input.email,
+      FederationIdentifier: input.email,
       Alias: alias,
       LastName: lastName,
       ProfileId: input.profileId,
@@ -120,6 +146,18 @@ export async function createSalesforceUser(
     if (firstName) payload.FirstName = firstName
     if (input.userRoleId) payload.UserRoleId = input.userRoleId
     if (input.phone) payload.Phone = input.phone
+    if (input.division) payload['Division__c'] = input.division
+    if (input.businessLine) payload['Business_Line__c'] = input.businessLine
+
+    // License selection: prefer explicit userLicenseId; otherwise default to Salesforce
+    if (input.userLicenseId) {
+      payload['UserLicenseId'] = input.userLicenseId
+    } else {
+      const licenseId = await resolveSalesforceUserLicenseId(config, 'Salesforce')
+      if (licenseId) {
+        payload['UserLicenseId'] = licenseId
+      }
+    }
 
     const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`
     const response = await fetch(apiUrl, {

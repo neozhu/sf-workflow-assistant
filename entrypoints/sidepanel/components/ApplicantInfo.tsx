@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { PROFILES, USER_ROLES } from '@/lib/salesforce-data'
+import { PROFILES, USER_ROLES, BUSINESS_LINES, USER_LICENSES } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
 interface ApplicantInfo {
@@ -29,12 +29,21 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [expanded, setExpanded] = useState<boolean>(canCreate)
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
+  const [selectedBusinessLine, setSelectedBusinessLine] = useState<string | null>(null)
+  const [selectedUserLicenseId, setSelectedUserLicenseId] = useState<string | null>(USER_LICENSES[0]?.Id || null)
   const [creating, setCreating] = useState<boolean>(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
 
   const workAreasText = (applicantInfo.workAreas || []).join(' ').toLowerCase()
   const locationText = (applicantInfo.location || '').toLowerCase()
+  const divisionText = (applicantInfo.division || '').toLowerCase()
+
+  const divisionTokens = useMemo(() => {
+    const raw = divisionText.replace(/[^a-zA-Z\s]/g, ' ')
+    const tokens = raw.split(/\s+/).filter(t => t.length >= 2)
+    return tokens
+  }, [divisionText])
 
   const recommendedProfiles = useMemo(() => {
     const scoreForProfile = (name: string): number => {
@@ -48,6 +57,10 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
       if (workAreasText.includes('read') && n.includes('read only')) score += 3
       if (workAreasText.includes('vp') && n.includes('vp')) score += 2
       if (workAreasText.includes('restricted') && n.includes('restricted')) score += 2
+      // consider division tokens in profile name
+      for (const tk of divisionTokens) {
+        if (tk && n.includes(tk)) score += 2
+      }
       return score
     }
     const withScores = PROFILES.map(p => ({ ...p, _score: scoreForProfile(p.Name) }))
@@ -55,7 +68,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
     const top = withScores.filter(x => x._score > 0).slice(0, 8)
     const rest = withScores.filter(x => x._score === 0)
     return { top, rest }
-  }, [workAreasText])
+  }, [workAreasText, divisionTokens])
 
   const recommendedRoles = useMemo(() => {
     const scoreForRole = (name: string): number => {
@@ -68,6 +81,10 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
       if (/global/.test(locationText) && /global/.test(n)) score += 5
       if (/manager/.test(workAreasText) && /manager/.test(n)) score += 2
       if (!/manager/.test(workAreasText) && /user/.test(n)) score += 1
+      // consider division tokens in role name
+      for (const tk of divisionTokens) {
+        if (tk && n.includes(tk)) score += 2
+      }
       return score
     }
     const withScores = USER_ROLES.map(r => ({ ...r, _score: scoreForRole(r.Name) }))
@@ -75,7 +92,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
     const top = withScores.filter(x => x._score > 0).slice(0, 8)
     const rest = withScores.filter(x => x._score === 0)
     return { top, rest }
-  }, [locationText, workAreasText])
+  }, [locationText, workAreasText, divisionTokens])
 
   const handleCreate = async () => {
     try {
@@ -91,6 +108,18 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         setCreateError('Please select a Profile.')
         return
       }
+      if (!selectedBusinessLine) {
+        setCreateError('Please select a Business Line.')
+        return
+      }
+      if (!selectedRoleId) {
+        setCreateError('Please select a User Role.')
+        return
+      }
+      if (!selectedUserLicenseId) {
+        setCreateError('Please select a User License.')
+        return
+      }
       const name = applicantInfo.name?.trim() || applicantInfo.email?.split('@')[0] || 'User'
       const res = await createSalesforceUser(config, {
         name,
@@ -98,7 +127,11 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         alias: applicantInfo.shortname,
         phone: applicantInfo.phone,
         profileId: selectedProfileId,
-        userRoleId: selectedRoleId || undefined
+        userRoleId: selectedRoleId,
+        userLicenseId: selectedUserLicenseId || undefined,
+        division: applicantInfo.division,
+        businessLine: selectedBusinessLine,
+        // license selection will be passed via UserLicenseId override in payload
       })
       if (!res.success) {
         setCreateError(res.error || 'Failed to create user')
@@ -209,21 +242,23 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         </div>
 
         {/* Create New User Section */}
-        <div className="pt-2">
-          <Button variant="outline" size="sm" onClick={() => setExpanded(v => !v)} className="gap-2">
-            <PlusCircle className="h-4 w-4" />
-            {expanded ? 'Hide Create User' : 'Create New Salesforce User'}
-            {expanded ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
-          </Button>
-        </div>
+        {canCreate && (
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={() => setExpanded(v => !v)} className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              {expanded ? 'Hide Create User' : 'Create New Salesforce User'}
+              {expanded ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+            </Button>
+          </div>
+        )}
 
-        {expanded && (
+        {canCreate && expanded && (
           <div className="mt-3 space-y-3 border-t pt-3">
             <div className="text-xs text-muted-foreground">Select a Profile and optionally a User Role. Recommendations are based on Work Scopes and Location.</div>
 
-            {/* Profile selection */}
+            {/* Profile selection (required) */}
             <div className="space-y-2">
-              <div className="text-xs font-medium">Profile</div>
+              <div className="text-xs font-medium">Profile <span className="text-destructive">*</span></div>
               {recommendedProfiles.top.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {recommendedProfiles.top.map(p => (
@@ -251,9 +286,25 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               </div>
             </div>
 
-            {/* Role selection */}
+            {/* Business Line selection (required) */}
             <div className="space-y-2">
-              <div className="text-xs font-medium">User Role (optional)</div>
+              <div className="text-xs font-medium">Business Line <span className="text-destructive">*</span></div>
+              <div className="flex flex-wrap gap-2">
+                {BUSINESS_LINES.map((b) => (
+                  <Badge
+                    key={b}
+                    onClick={() => setSelectedBusinessLine(b)}
+                    className={`cursor-pointer ${selectedBusinessLine === b ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {b}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Role selection (required) */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
               {recommendedRoles.top.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {recommendedRoles.top.map(r => (
@@ -281,6 +332,22 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               </div>
             </div>
 
+            {/* User License selection (required) */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium">User License <span className="text-destructive">*</span></div>
+              <div className="flex flex-wrap gap-2">
+                {USER_LICENSES.map((l) => (
+                  <Badge
+                    key={l.Id}
+                    onClick={() => setSelectedUserLicenseId(l.Id)}
+                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {l.Name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
             {/* Create action */}
             {createError && (
               <div className="flex items-center gap-2 text-xs text-destructive"><AlertCircle className="h-4 w-4" />{createError}</div>
@@ -289,7 +356,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               <div className="flex items-center gap-2 text-xs text-green-600"><CheckCircle2 className="h-4 w-4" />{createSuccess}</div>
             )}
             <div>
-              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId}>
+              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId}>
                 {creating ? 'Creating...' : 'Create Salesforce User'}
               </Button>
             </div>

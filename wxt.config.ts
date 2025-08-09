@@ -8,8 +8,9 @@ export default defineConfig({
   alias: {
     '@': path.resolve(__dirname, './'),
   },
+  // Typing workaround: cast plugins as unknown to PluginOption[] to satisfy TS
   vite: () => ({
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss()] as unknown as any[],
   }),
   manifest: {
     permissions: ['sidePanel', 'storage', 'contextMenus'],

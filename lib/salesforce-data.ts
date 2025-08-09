@@ -16,6 +16,42 @@ export interface Profile {
 }
 
 /**
+ * UserLicense interface and data for Salesforce user licenses
+ */
+export interface UserLicense {
+  Id: string;
+  Name: string;
+}
+
+/**
+ * Business Line options for custom field Business_Line__c
+ */
+export const BUSINESS_LINES: string[] = [
+  'Industry',
+  'Mobility',
+  'Products & Service (P&S)',
+  'Systems & Products',
+  'Projects (CE)',
+  'Others',
+  'New Ventures',
+  'VH Projects - BID',
+  'VH Projects - NEGOTIATED',
+  'HyService - CAPEX',
+  'HyService - OPEX',
+  'HyService - SPARES',
+  'HyService - AUT/DIGITAL'
+]
+
+/**
+ * Predefined Salesforce user licenses
+ */
+export const USER_LICENSES: UserLicense[] = [
+  { Id: '100j0000000ZfcZAAS', Name: 'Salesforce' },
+  { Id: '100j0000000ZfcbAAC', Name: 'Chatter Free' }
+]
+
+
+/**
  * Predefined Salesforce user roles
  */
 export const USER_ROLES: UserRole[] = [
