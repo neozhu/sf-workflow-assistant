@@ -29,8 +29,8 @@ export interface UserLicense {
 export const BUSINESS_LINES: string[] = [
   'Industry',
   'Mobility',
+  'Fabrics & Rolls (FRS)',
   'Products & Service (P&S)',
-  'Systems & Products',
   'Projects (CE)',
   'Others',
   'New Ventures',
