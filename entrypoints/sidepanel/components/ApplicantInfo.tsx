@@ -205,7 +205,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   <Badge
                     key={l.Id}
                     onClick={() => setSelectedUserLicenseId(l.Id)}
-                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                    variant={selectedUserLicenseId === l.Id ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'ring-2 ring-primary' : ''}`}
                   >
                     {l.Name}
                   </Badge>
@@ -221,7 +222,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   <Badge
                     key={r.Id}
                     onClick={() => setSelectedRoleId(r.Id)}
-                    className={`cursor-pointer ${selectedRoleId === r.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                    variant={selectedRoleId === r.Id ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedRoleId === r.Id ? 'ring-2 ring-primary' : ''}`}
                   >
                     {r.Name}
                   </Badge>
@@ -237,7 +239,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   <Badge
                     key={p.Id}
                     onClick={() => setSelectedProfileId(p.Id)}
-                    className={`cursor-pointer ${selectedProfileId === p.Id ? 'bg-primary text-primary-foreground' : ''}`}
+                    variant={selectedProfileId === p.Id ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedProfileId === p.Id ? 'ring-2 ring-primary' : ''}`}
                   >
                     {p.Name}
                   </Badge>
@@ -253,7 +256,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   <Badge
                     key={b}
                     onClick={() => setSelectedBusinessLine(b)}
-                    className={`cursor-pointer ${selectedBusinessLine === b ? 'bg-primary text-primary-foreground' : ''}`}
+                    variant={selectedBusinessLine === b ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedBusinessLine === b ? 'ring-2 ring-primary' : ''}`}
                   >
                     {b}
                   </Badge>
