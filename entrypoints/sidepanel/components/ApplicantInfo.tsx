@@ -198,8 +198,9 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
             <div className="text-xs text-muted-foreground">Select User License, User Role, Profile, and Business Line. All fields are required.</div>
 
             {/* User License selection (required) */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               <div className="text-xs font-medium">User License <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Choose a user license (e.g., Salesforce / Chatter Free) to determine features and access scope.</div>
               <div className="flex flex-wrap gap-2">
                 {USER_LICENSES.map((l) => (
                   <Badge
@@ -212,11 +213,14 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   </Badge>
                 ))}
               </div>
+              
             </div>
 
             {/* User Role selection (required) */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               <div className="text-xs font-medium">User Role <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground">Defines the user's position in the Salesforce role hierarchy and affects record visibility via org-wide defaults, the role hierarchy, and sharing rules. Choose exactly one role.</div>
+              <div className="text-[11px] text-muted-foreground">Groups (DV / VH / VP / VT) are for easier scanning.</div>
               {(() => {
                 const roles = [...USER_ROLES].sort((a, b) => a.Name.localeCompare(b.Name))
                 const groups = {
@@ -255,14 +259,16 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                         </div>
                       ) : null
                     ))}
+                    
                   </div>
                 )
               })()}
             </div>
 
             {/* Profile selection (required) */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               <div className="text-xs font-medium">Profile <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Profiles determine object/field access and baseline permissions.</div>
               <div className="flex flex-wrap gap-2">
                 {[...PROFILES].sort((a, b) => a.Name.localeCompare(b.Name)).map(p => (
                   <Badge
@@ -275,11 +281,13 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   </Badge>
                 ))}
               </div>
+              
             </div>
 
             {/* Business Line selection (required) */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               <div className="text-xs font-medium">Business Line <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Business_Line__c. Choose the actual business line.</div>
               <div className="flex flex-wrap gap-2">
                 {BUSINESS_LINES.map((b) => (
                   <Badge
@@ -292,6 +300,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                   </Badge>
                 ))}
               </div>
+             
             </div>
 
             {/* Create action */}
