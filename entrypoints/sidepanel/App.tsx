@@ -6,12 +6,22 @@ import {
   Settings,
   User
 } from 'lucide-react'
+import { useEffect } from 'react'
 import { HomeTab } from './components/HomeTab'
 import { ProfileTab } from './components/ProfileTab'
 import { SettingsTab } from './components/SettingsTab'
 
 function App() {
   const { appearance, system, ui, loading, updateAppearance, updateSystem, updateUI, updateOrganization, updateUser, resetSettings } = useSettings()
+
+  // Debug: Log system state changes
+  useEffect(() => {
+    console.log('App: system state changed:', {
+      organization: system.organization,
+      user: system.user,
+      instanceUrl: system.instanceUrl ? '***set***' : 'not set'
+    })
+  }, [system.organization, system.user, system.instanceUrl])
 
   const handleTabChange = (value: string) => {
     updateUI({ activeTab: value })
@@ -39,7 +49,11 @@ function App() {
             {system.organization ? (
               <>
                 <h1 className="font-semibold text-lg">{system.organization.Name}</h1>
-                <p className="text-sm text-muted-foreground">
+                <p className={`text-sm font-medium ${
+                  system.organization.IsSandbox 
+                    ? 'text-orange-600 dark:text-orange-400' 
+                    : 'text-muted-foreground'
+                }`}>
                   {system.organization.IsSandbox ? 'Sandbox' : 'Production'} Environment
                 </p>
               </>

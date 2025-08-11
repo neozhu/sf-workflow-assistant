@@ -53,40 +53,33 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
 
   // Load saved configuration on component mount
   useEffect(() => {
-    const saved = loadSalesforceConfig()
-    if (saved.config) {
-      updateSystem({ 
-        instanceUrl: saved.config.instanceUrl,
-        accessToken: saved.config.accessToken
-      })
+    // If we already have organization info in system state, use it
+    if (system.organization) {
+      setOrganizationInfo(system.organization)
+      setIsConnectionValid(true)
+      setConnectionResult({ success: true, organization: system.organization, user: system.user })
     } else {
-      // Set default values if no saved configuration exists
-      updateSystem({ 
-        instanceUrl: system.instanceUrl || 'https://voithhydro.my.salesforce.com',
-        accessToken: system.accessToken || ''
-      })
+      // Clear local state if no organization in global state
+      setOrganizationInfo(null)
+      setIsConnectionValid(false)
+      setConnectionResult(null)
     }
     
-    // Load organization info from saved config or global state
-    const orgInfo = saved.organization || system.organization
-    if (orgInfo) {
-      setOrganizationInfo(orgInfo)
-      setIsConnectionValid(true)
-      setConnectionResult({ success: true, organization: orgInfo, user: saved.user })
-      // Update organization info in global state if loaded from local storage
-      if (saved.organization) {
-        updateOrganization(orgInfo)
-      }
+    if (system.user) {
+      setUserInfo(system.user)
+    } else {
+      setUserInfo(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [system.organization, system.user])
 
-    // Load user info from saved config or global state
-    const userInfoData = saved.user || system.user
-    if (userInfoData) {
-      setUserInfo(userInfoData)
-      // Update user info in global state if loaded from local storage
-      if (saved.user) {
-        updateUser(userInfoData)
-      }
+  // Set default instanceUrl only once on mount
+  useEffect(() => {
+    if (!system.instanceUrl) {
+      updateSystem({ 
+        instanceUrl: 'https://voithhydro.my.salesforce.com',
+        accessToken: system.accessToken || ''
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -128,35 +121,27 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
       if (result.success && result.organization) {
         setOrganizationInfo(result.organization)
         setIsConnectionValid(true)
-        // Update organization info in global state
-        updateOrganization(result.organization)
         
         // Update user info if available
         if (result.user) {
           setUserInfo(result.user)
-          updateUser(result.user)
         }
         
-        // Auto-save successful connection to local storage
-        try {
-          saveSalesforceConfig(
-            {
-              instanceUrl: system.instanceUrl,
-              accessToken: system.accessToken
-            },
-            result.organization,
-            result.user || undefined
-          )
-          console.log('Connection info auto-saved successfully')
-        } catch (saveError) {
-          console.error('Failed to auto-save connection info:', saveError)
+        // Update global state with the new organization and user info
+        console.log('About to update organization with:', result.organization)
+        await updateOrganization(result.organization)
+        if (result.user) {
+          console.log('About to update user with:', result.user)
+          await updateUser(result.user)
         }
+        
+        console.log('Connection test successful and state updated')
       } else {
         setOrganizationInfo(null)
         setUserInfo(null)
         setIsConnectionValid(false)
-        updateOrganization(null)
-        updateUser(null)
+        await updateOrganization(null)
+        await updateUser(null)
       }
     } catch (error) {
       setConnectionResult({
@@ -166,6 +151,8 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
       setOrganizationInfo(null)
       setUserInfo(null)
       setIsConnectionValid(false)
+      await updateOrganization(null)
+      await updateUser(null)
     } finally {
       setIsTestingConnection(false)
     }
@@ -177,6 +164,11 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     }
 
     try {
+      // All data is already saved in global state via updateOrganization and updateUser
+      // The WXT storage system will automatically persist this data
+      console.log('Settings saved successfully')
+      
+      // Optional: Also save to localStorage for backwards compatibility if needed
       saveSalesforceConfig(
         {
           instanceUrl: system.instanceUrl,
@@ -185,20 +177,26 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         organizationInfo,
         userInfo || undefined
       )
-      
-      // Show success feedback (you might want to add a toast notification here)
-      console.log('Settings saved successfully')
     } catch (error) {
       console.error('Failed to save settings:', error)
     }
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    // Clear localStorage
     clearSalesforceConfig()
+    
+    // Reset local component state
     setConnectionResult(null)
     setOrganizationInfo(null)
     setUserInfo(null)
     setIsConnectionValid(false)
+    
+    // Reset global state
+    await updateOrganization(null)
+    await updateUser(null)
+    
+    // Reset all settings (this will clear WXT storage)
     resetSettings()
   }
 
