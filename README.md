@@ -1,13 +1,14 @@
 # Salesforce Workflow Assistant
 
-A powerful browser extension that streamlines Salesforce user management through workflow application forms. One-click create or activate Salesforce accounts directly from workflow applications with intelligent form data extraction and user search capabilities.
+A powerful browser extension that streamlines Salesforce user management through workflow application forms. One-click create or activate Salesforce accounts directly from workflow applications with intelligent form data extraction, user search capabilities, and manual selection of profiles, business lines and user roles based on workflow information.
 
 ## Features
 
 - � **Workflow Integration** - Automatically extracts applicant information from workflow.voith.com forms
 - 🔍 **Smart User Search** - Search existing Salesforce users by name, email, or shortname
 - ⚡ **One-Click Operations** - Create new users or activate existing accounts instantly
-- 🖥️ **Sidepanel Interface** - Convenient sidepanel for seamless workflow integration
+- � **Intelligent User Creation** - Auto-populate new user fields from workflow data with smart defaults
+- �🖥️ **Sidepanel Interface** - Convenient sidepanel for seamless workflow integration
 - 🔐 **Secure Connection** - Direct Salesforce API integration with access token authentication
 - � **User Management** - View user profiles, check account status, and manage permissions
 - 🌙 **Theme Support** - Light/Dark theme with system preference detection
@@ -17,7 +18,7 @@ A powerful browser extension that streamlines Salesforce user management through
 
 ## Demo
 
-![Extension Demo](public/demo.gif)
+![Extension Demo](public/demo.png)
 
 *Watch how the Salesforce Workflow Assistant works: extract applicant data from workflow forms and manage Salesforce users seamlessly.*
 
@@ -109,7 +110,22 @@ The extension should now appear in your Edge browser and be ready for use.
    - Search for existing users or create new accounts
    - Activate/deactivate users as needed
 
-4. **Manage Users**
+4. **Create New Users**
+   - When applicant information is extracted, click "Create New User" button
+   - The extension automatically populates user fields from workflow data:
+     - **Username**: Generated from email or first/last name
+     - **Email**: Extracted from workflow form
+     - **First Name** & **Last Name**: From applicant information
+     - **Alias**: Auto-generated short name
+     - **Nickname**: Based on first name
+     - **Profile**: Manually select from available profiles based on workflow information
+     - **Business Line**: Manually choose appropriate business line from workflow department/division data
+     - **User Role**: Manually assign user role based on workflow position/role information
+   - Review and modify fields as needed before creation
+   - Click "Confirm Create" to create the Salesforce user account
+   - The new user will be created with appropriate permissions and settings
+
+5. **Manage Users**
    - Use the search functionality to find Salesforce users
    - View user profiles and account status
    - Perform account management operations
@@ -156,13 +172,15 @@ sf-workflow-assistant/
 - Sends data to sidepanel for processing
 
 ### Sidepanel Interface
-- **Home Tab**: User search, applicant info display, account management
+- **Home Tab**: User search, applicant info display, account management, new user creation
 - **Profile Tab**: Current user profile and organization details  
 - **Settings Tab**: Salesforce connection configuration
 
 ### Salesforce Integration (`lib/salesforce.ts`)
 - Direct API connection using access tokens
 - User search and management operations
+- New user creation with intelligent field mapping
+- User activation and deactivation capabilities
 - Organization information retrieval
 - Error handling and validation
 
@@ -261,12 +279,18 @@ This extension supports all major browsers through WXT's universal browser compa
    - Verify the API version compatibility
    - Ensure the instance URL is correct
 
-3. **Content script not working**
+3. **"Failed to create new user"**
+   - Verify you have user creation permissions in Salesforce
+   - Check if the username already exists (usernames must be unique across all Salesforce orgs)
+   - Ensure required fields are properly filled from workflow data
+   - Verify the selected profile and user license are valid
+
+4. **Content script not working**
    - Make sure you're on workflow.voith.com
    - Check if the page structure has changed
    - Reload the extension and refresh the page
 
-4. **Extension not loading**
+5. **Extension not loading**
    - Verify all dependencies are installed (`pnpm install`)
    - Check for TypeScript compilation errors (`pnpm compile`)
    - Ensure proper build output in `.output/chrome-mv3`
