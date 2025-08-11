@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react'
 import { useState } from 'react'
-import { PROFILES, USER_ROLES, BUSINESS_LINES, USER_LICENSES } from '@/lib/salesforce-data'
+import { PROFILES, USER_ROLES, BUSINESS_LINES } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
 interface ApplicantInfo {
@@ -30,7 +30,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [selectedBusinessLine, setSelectedBusinessLine] = useState<string | null>(null)
-  const [selectedUserLicenseId, setSelectedUserLicenseId] = useState<string | null>(null)
   const [creating, setCreating] = useState<boolean>(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
@@ -57,10 +56,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         setCreateError('Please select a User Role.')
         return
       }
-      if (!selectedUserLicenseId) {
-        setCreateError('Please select a User License.')
-        return
-      }
       const name = applicantInfo.name?.trim() || applicantInfo.email?.split('@')[0] || 'User'
       const res = await createSalesforceUser(config, {
         name,
@@ -69,10 +64,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         phone: applicantInfo.phone,
         profileId: selectedProfileId,
         userRoleId: selectedRoleId,
-        userLicenseId: selectedUserLicenseId || undefined,
         division: applicantInfo.division,
         businessLine: selectedBusinessLine,
-        // license selection will be passed via UserLicenseId override in payload
       })
       if (!res.success) {
         setCreateError(res.error || 'Failed to create user')
@@ -195,26 +188,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
 
         {canCreate && expanded && (
           <div className="mt-3 space-y-3 border-t pt-3">
-            <div className="text-xs text-muted-foreground">Select User License, User Role, Profile, and Business Line. All fields are required.</div>
-
-            {/* User License selection (required) */}
-            <div className="space-y-2 mt-3">
-              <div className="text-xs font-medium">User License <span className="text-destructive">*</span></div>
-              <div className="text-[11px] text-muted-foreground mt-1">Choose a user license (e.g., Salesforce / Chatter Free) to determine features and access scope.</div>
-              <div className="flex flex-wrap gap-2">
-                {USER_LICENSES.map((l) => (
-                  <Badge
-                    key={l.Id}
-                    onClick={() => setSelectedUserLicenseId(l.Id)}
-                    variant={selectedUserLicenseId === l.Id ? 'default' : 'secondary'}
-                    className={`cursor-pointer ${selectedUserLicenseId === l.Id ? 'ring-2 ring-primary' : ''}`}
-                  >
-                    {l.Name}
-                  </Badge>
-                ))}
-              </div>
-              
-            </div>
+            <div className="text-xs text-muted-foreground">Select User Role, Profile, and Business Line. All fields are required.</div>
 
             {/* User Role selection (required) */}
             <div className="space-y-2 mt-3">
@@ -311,7 +285,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               <div className="flex items-center gap-2 text-xs text-green-600"><CheckCircle2 className="h-4 w-4" />{createSuccess}</div>
             )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId}>
+              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId} className="gap-2">
+                <UserPlus className="h-4 w-4" />
                 {creating ? 'Creating...' : 'Create Salesforce User'}
               </Button>
             </div>

@@ -40,7 +40,6 @@ export interface CreateSalesforceUserInput {
   phone?: string
   profileId: string
   userRoleId?: string
-  userLicenseId?: string
   timeZoneSidKey?: string
   localeSidKey?: string
   emailEncodingKey?: string
@@ -55,60 +54,31 @@ export interface CreateSalesforceUserResult {
   error?: string
 }
 
-function generateAliasFromNameOrEmail(name: string, email: string, preferredAlias?: string): string {
-  if (preferredAlias && preferredAlias.trim().length > 0) {
-    return preferredAlias.trim().slice(0, 8)
-  }
 
-  const clean = (s: string) => s.replace(/[^a-zA-Z]/g, '')
-  let alias = ''
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) {
-    alias = (clean(parts[0]).charAt(0) + clean(parts[parts.length - 1])).toLowerCase()
-  } else if (parts.length === 1) {
-    alias = clean(parts[0]).toLowerCase()
-  }
-  if (!alias || alias.length === 0) {
-    alias = clean(email.split('@')[0]).toLowerCase()
-  }
-  if (!alias || alias.length === 0) {
-    alias = 'user'
-  }
-  return alias.slice(0, 8)
-}
 
-function splitNameFromEmailFallback(name: string, email: string): { firstName?: string; lastName: string } {
-  const clean = (s: string) => s.replace(/[^a-zA-Z]/g, ' ').trim()
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) {
-    const lastName = parts.pop() as string
-    return { firstName: parts.join(' '), lastName }
-  }
-  // try parse from email: firstname.lastname@...
-  const local = email.split('@')[0] || ''
-  const emailParts = clean(local).split(/\s+|\./).filter(Boolean)
-  if (emailParts.length >= 2) {
-    return { firstName: emailParts[0], lastName: emailParts.slice(1).join(' ') }
-  }
-  if (parts.length === 1) {
-    return { lastName: parts[0] }
-  }
-  return { lastName: 'User' }
-}
-
-async function resolveSalesforceUserLicenseId(config: SalesforceConfig, licenseName = 'Salesforce'): Promise<string | undefined> {
-  try {
-    const instanceUrl = config.instanceUrl.replace(/\/$/, '')
-    const soql = encodeURIComponent(`SELECT Id, Name FROM UserLicense WHERE Name = '${licenseName}' LIMIT 1`)
-    const apiUrl = `${instanceUrl}/services/data/v64.0/query/?q=${soql}`
-    const res = await fetch(apiUrl, {
-      headers: { Authorization: `Bearer ${config.accessToken}`, Accept: 'application/json' }
-    })
-    if (!res.ok) return undefined
-    const data = await res.json()
-    return data.records?.[0]?.Id
-  } catch {
-    return undefined
+function splitNameFromEmailFallback(email: string): { firstName?: string; lastName: string,nickName:string } {
+  // Extract the local part (before @) from email
+  const localPart = email.split('@')[0];
+  
+  // Split by dot to get name parts
+  const nameParts = localPart.split('.');
+  
+  if (nameParts.length >= 2) {
+    // If we have at least 2 parts, first is firstName, last is lastName
+    const firstName = nameParts[0];
+    const lastName = nameParts[nameParts.length - 1];
+    const nickName = localPart; // Use the full local part as nickname
+    
+    return { firstName, lastName, nickName };
+  } else if (nameParts.length === 1) {
+    // If only one part, use it as lastName and nickname
+    const lastName = nameParts[0];
+    const nickName = localPart;
+    
+    return { lastName, nickName };
+  } else {
+    // Fallback case - use the whole local part as lastName and nickname
+    return { lastName: localPart, nickName: localPart };
   }
 }
 
@@ -128,15 +98,17 @@ export async function createSalesforceUser(
     }
 
     const instanceUrl = config.instanceUrl.replace(/\/$/, '')
-    const { firstName, lastName } = splitNameFromEmailFallback(input.name, input.email)
-    const alias = generateAliasFromNameOrEmail(input.name, input.email, input.alias)
-
+    const { firstName, lastName, nickName } = splitNameFromEmailFallback(input.email)
+    const alias = input.alias;
+    console.log(input);
     const payload: Record<string, unknown> = {
       Username: input.email,
       Email: input.email,
       FederationIdentifier: input.email,
       Alias: alias,
+      FirstName: firstName,
       LastName: lastName,
+      CommunityNickname: nickName,
       ProfileId: input.profileId,
       TimeZoneSidKey: input.timeZoneSidKey || 'GMT',
       LocaleSidKey: input.localeSidKey || 'en_US',
@@ -148,16 +120,6 @@ export async function createSalesforceUser(
     if (input.phone) payload.Phone = input.phone
     if (input.division) payload['Division__c'] = input.division
     if (input.businessLine) payload['Business_Line__c'] = input.businessLine
-
-    // License selection: prefer explicit userLicenseId; otherwise default to Salesforce
-    if (input.userLicenseId) {
-      payload['UserLicenseId'] = input.userLicenseId
-    } else {
-      const licenseId = await resolveSalesforceUserLicenseId(config, 'Salesforce')
-      if (licenseId) {
-        payload['UserLicenseId'] = licenseId
-      }
-    }
 
     const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`
     const response = await fetch(apiUrl, {

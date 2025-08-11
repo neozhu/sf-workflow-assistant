@@ -228,6 +228,10 @@ export const PROFILES: Profile[] = [
   {
     Id: "00ebh000000faU9AAI",
     Name: "OneVoith Standard Sales User VP"
+  },
+  {
+    Id:"00ej0000000qRxgAAE",
+    Name:"Chatter Free User"
   }
 ];
 
