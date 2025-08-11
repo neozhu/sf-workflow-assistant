@@ -33,6 +33,128 @@ export interface SalesforceConnectionResult {
   error?: string
 }
 
+export interface CreateSalesforceUserInput {
+  name: string
+  email: string
+  alias?: string
+  phone?: string
+  profileId: string
+  userRoleId?: string
+  timeZoneSidKey?: string
+  localeSidKey?: string
+  emailEncodingKey?: string
+  languageLocaleKey?: string
+  division?: string
+  businessLine?: string
+}
+
+export interface CreateSalesforceUserResult {
+  success: boolean
+  userId?: string
+  error?: string
+}
+
+
+
+function splitNameFromEmailFallback(email: string): { firstName?: string; lastName: string,nickName:string } {
+  // Extract the local part (before @) from email
+  const localPart = email.split('@')[0];
+  
+  // Split by dot to get name parts
+  const nameParts = localPart.split('.');
+  
+  if (nameParts.length >= 2) {
+    // If we have at least 2 parts, first is firstName, last is lastName
+    const firstName = nameParts[0];
+    const lastName = nameParts[nameParts.length - 1];
+    const nickName = localPart; // Use the full local part as nickname
+    
+    return { firstName, lastName, nickName };
+  } else if (nameParts.length === 1) {
+    // If only one part, use it as lastName and nickname
+    const lastName = nameParts[0];
+    const nickName = localPart;
+    
+    return { lastName, nickName };
+  } else {
+    // Fallback case - use the whole local part as lastName and nickname
+    return { lastName: localPart, nickName: localPart };
+  }
+}
+
+/**
+ * Create a Salesforce User
+ */
+export async function createSalesforceUser(
+  config: SalesforceConfig,
+  input: CreateSalesforceUserInput
+): Promise<CreateSalesforceUserResult> {
+  try {
+    if (!config.instanceUrl || !config.accessToken) {
+      return { success: false, error: 'Instance URL and Access Token are required' }
+    }
+    if (!input.email || !input.profileId || !input.name) {
+      return { success: false, error: 'Name, Email and ProfileId are required' }
+    }
+
+    const instanceUrl = config.instanceUrl.replace(/\/$/, '')
+    const { firstName, lastName, nickName } = splitNameFromEmailFallback(input.email)
+    const alias = input.alias;
+    console.log(input);
+    const payload: Record<string, unknown> = {
+      Username: input.email,
+      Email: input.email,
+      FederationIdentifier: input.email,
+      Alias: alias,
+      FirstName: firstName,
+      LastName: lastName,
+      CommunityNickname: nickName,
+      ProfileId: input.profileId,
+      UserPermissionsMarketingUser:true,
+      TimeZoneSidKey: input.timeZoneSidKey || 'GMT',
+      LocaleSidKey: input.localeSidKey || 'en_US',
+      EmailEncodingKey: input.emailEncodingKey || 'UTF-8',
+      LanguageLocaleKey: input.languageLocaleKey || 'en_US'
+    }
+    if (firstName) payload.FirstName = firstName
+    if (input.userRoleId) payload.UserRoleId = input.userRoleId
+    if (input.phone) payload.Phone = input.phone
+    if (input.division) payload['Division__c'] = input.division
+    if (input.businessLine) payload['Business_Line__c'] = input.businessLine
+
+    const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      try {
+        const err = await response.json()
+        if (err && Array.isArray(err) && err[0]?.message) {
+          errorMessage = err[0].message
+        } else if (typeof err?.message === 'string') {
+          errorMessage = err.message
+        }
+      } catch {}
+      return { success: false, error: errorMessage }
+    }
+
+    const data = await response.json()
+    return { success: true, userId: data.id }
+  } catch (error) {
+    console.error('Salesforce user creation failed:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' }
+  }
+}
+
+
 /**
  * Test Salesforce connection and retrieve organization information
  */

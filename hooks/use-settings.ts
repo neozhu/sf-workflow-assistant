@@ -43,7 +43,11 @@ const appearanceSettings = storage.defineItem<AppearanceSettings>('local:appeara
 const systemSettings = storage.defineItem<SystemSettings>('local:systemSettings', {
   fallback: {
     notifications: true,
-    syncInterval: 15
+    syncInterval: 15,
+    organization: undefined,
+    user: undefined,
+    instanceUrl: undefined,
+    accessToken: undefined
   }
 })
 
@@ -55,7 +59,14 @@ const uiSettings = storage.defineItem<UISettings>('local:uiSettings', {
 
 export function useSettings() {
   const [appearance, setAppearance] = useState<AppearanceSettings>({ theme: 'system' })
-  const [system, setSystem] = useState<SystemSettings>({ notifications: true, syncInterval: 15 })
+  const [system, setSystem] = useState<SystemSettings>({ 
+    notifications: true, 
+    syncInterval: 15,
+    organization: undefined,
+    user: undefined,
+    instanceUrl: undefined,
+    accessToken: undefined
+  })
   const [ui, setUI] = useState<UISettings>({ activeTab: 'home' })
   const [loading, setLoading] = useState(true)
 
@@ -68,6 +79,12 @@ export function useSettings() {
           systemSettings.getValue(),
           uiSettings.getValue()
         ])
+        
+        console.log('Loaded settings from storage:', {
+          appearanceData,
+          systemData,
+          uiData
+        })
         
         setAppearance(appearanceData)
         // Ensure system data includes any previously saved organization info
@@ -127,7 +144,14 @@ export function useSettings() {
       
       // Reset to default values
       const defaultAppearance = { theme: 'system' as Theme }
-      const defaultSystem = { notifications: true, syncInterval: 15 }
+      const defaultSystem = { 
+        notifications: true, 
+        syncInterval: 15,
+        organization: undefined,
+        user: undefined,
+        instanceUrl: undefined,
+        accessToken: undefined
+      }
       const defaultUI = { activeTab: 'home' }
       
       setAppearance(defaultAppearance)
@@ -140,24 +164,29 @@ export function useSettings() {
 
   // Update organization info
   const updateOrganization = async (organization: OrganizationInfo | null) => {
-    const newSettings = { ...system, organization: organization || undefined }
-    setSystem(newSettings)
-    try {
-      await systemSettings.setValue(newSettings)
-    } catch (error) {
-      console.error('Failed to save organization info:', error)
-    }
+    console.log('updateOrganization called with:', organization)
+    setSystem(prevSystem => {
+      const newSettings = { ...prevSystem, organization: organization || undefined }
+      console.log('Setting new system state:', newSettings)
+      // Save to storage async
+      systemSettings.setValue(newSettings).catch(error => {
+        console.error('Failed to save organization info:', error)
+      })
+      return newSettings
+    })
+    console.log('Organization state update initiated')
   }
 
   // Update user info
   const updateUser = async (user: UserInfo | null) => {
-    const newSettings = { ...system, user: user || undefined }
-    setSystem(newSettings)
-    try {
-      await systemSettings.setValue(newSettings)
-    } catch (error) {
-      console.error('Failed to save user info:', error)
-    }
+    setSystem(prevSystem => {
+      const newSettings = { ...prevSystem, user: user || undefined }
+      // Save to storage async
+      systemSettings.setValue(newSettings).catch(error => {
+        console.error('Failed to save user info:', error)
+      })
+      return newSettings
+    })
   }
 
   return {

@@ -13,15 +13,20 @@ interface UserCardProps {
 }
 
 // Helper function to generate Salesforce user page URL
-function getSalesforceUserUrl(instanceUrl: string, userId: string): string {
+function getSalesforceUserUrl(instanceUrl: string, userId: string, isSandbox?: boolean): string {
   try {
     // Extract domain from instance URL (e.g., "https://voithhydro.my.salesforce.com" -> "voithhydro")
     const url = new URL(instanceUrl)
     const hostParts = url.hostname.split('.')
     const domain = hostParts[0] // Get the first part (voithhydro)
     
+    // Determine base URL based on environment
+    const baseUrl = isSandbox 
+      ? `https://${domain}.sandbox.lightning.force.com`
+      : `https://${domain}.lightning.force.com`
+    
     // Construct Lightning URL
-    return `https://${domain}.lightning.force.com/lightning/setup/ManageUsers/page?address=%2F${userId}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`
+    return `${baseUrl}/lightning/setup/ManageUsers/page?address=%2F${userId}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`
   } catch (error) {
     console.error('Failed to generate Salesforce user URL:', error)
     return '#'
@@ -35,9 +40,9 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
 
   // Get Salesforce user URL
   const getSalesforceUrl = () => {
-    const { config } = loadSalesforceConfig()
+    const { config, organization } = loadSalesforceConfig()
     if (config?.instanceUrl) {
-      return getSalesforceUserUrl(config.instanceUrl, currentUser.user_id)
+      return getSalesforceUserUrl(config.instanceUrl, currentUser.user_id, organization?.IsSandbox)
     }
     return '#'
   }

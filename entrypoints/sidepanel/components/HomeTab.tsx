@@ -25,6 +25,7 @@ interface ApplicantInfoData {
   system: string;
   location: string;
   businessArea: string;
+  workAreas: string[];
 }
 
 export function HomeTab() {
@@ -175,7 +176,17 @@ export function HomeTab() {
 
         {/* Applicant Information Section */}
         {applicantInfo && (
-          <ApplicantInfo applicantInfo={applicantInfo} />
+          <ApplicantInfo 
+            applicantInfo={applicantInfo} 
+            canCreate={hasSearched && users.length === 0}
+            onCreated={async () => {
+              // Re-run search by email after creation
+              if (applicantInfo.email) {
+                setSearchTerm(applicantInfo.email)
+                await handleSearchWithTerm(applicantInfo.email)
+              }
+            }}
+          />
         )}
 
         {/* Welcome message when no search performed */}
