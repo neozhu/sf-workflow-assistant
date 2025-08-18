@@ -128,20 +128,34 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
         }
         
         // Update global state with the new organization and user info
-        console.log('About to update organization with:', result.organization)
-        await updateOrganization(result.organization)
-        if (result.user) {
-          console.log('About to update user with:', result.user)
-          await updateUser(result.user)
+        try {
+          await updateOrganization(result.organization)
+          if (result.user) {
+            await updateUser(result.user)
+          }
+          
+          // Also save to localStorage for backwards compatibility
+          saveSalesforceConfig(
+            {
+              instanceUrl: system.instanceUrl,
+              accessToken: system.accessToken
+            },
+            result.organization,
+            result.user || undefined
+          )
+        } catch (error) {
+          console.error('Failed to save connection data:', error)
         }
-        
-        console.log('Connection test successful and state updated')
       } else {
         setOrganizationInfo(null)
         setUserInfo(null)
         setIsConnectionValid(false)
-        await updateOrganization(null)
-        await updateUser(null)
+        try {
+          await updateOrganization(null)
+          await updateUser(null)
+        } catch (error) {
+          console.error('Failed to clear connection data:', error)
+        }
       }
     } catch (error) {
       setConnectionResult({
@@ -166,7 +180,6 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
     try {
       // All data is already saved in global state via updateOrganization and updateUser
       // The WXT storage system will automatically persist this data
-      console.log('Settings saved successfully')
       
       // Optional: Also save to localStorage for backwards compatibility if needed
       saveSalesforceConfig(
@@ -375,6 +388,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
             Save Changes
           </Button>
         </div>
+
       </div>
     </ScrollArea>
   )

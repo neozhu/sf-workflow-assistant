@@ -80,15 +80,37 @@ export function useSettings() {
           uiSettings.getValue()
         ])
         
-        console.log('Loaded settings from storage:', {
-          appearanceData,
-          systemData,
-          uiData
-        })
+
+        
+        // Also try to load from localStorage as fallback if WXT storage is empty
+        let finalSystemData = systemData
+        if (!systemData.organization && !systemData.user) {
+          try {
+            const saved = localStorage.getItem('salesforce-config')
+            if (saved) {
+              const localData = JSON.parse(saved)
+
+              
+              if (localData.organization || localData.user || localData.config) {
+                finalSystemData = {
+                  ...systemData,
+                  organization: localData.organization,
+                  user: localData.user,
+                  instanceUrl: localData.config?.instanceUrl || systemData.instanceUrl,
+                  accessToken: localData.config?.accessToken || systemData.accessToken
+                }
+                
+                // Save this data back to WXT storage to sync
+                await systemSettings.setValue(finalSystemData)
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to load localStorage backup:', error)
+          }
+        }
         
         setAppearance(appearanceData)
-        // Ensure system data includes any previously saved organization info
-        setSystem(systemData)
+        setSystem(finalSystemData)
         setUI(uiData)
       } catch (error) {
         console.error('Failed to load settings:', error)
@@ -114,11 +136,16 @@ export function useSettings() {
   // Update system settings
   const updateSystem = async (updates: Partial<SystemSettings>) => {
     const newSettings = { ...system, ...updates }
+    
+    // Update state first
     setSystem(newSettings)
+    
+    // Then save to storage and wait for completion
     try {
       await systemSettings.setValue(newSettings)
     } catch (error) {
       console.error('Failed to save system settings:', error)
+      throw error
     }
   }
 
@@ -164,29 +191,34 @@ export function useSettings() {
 
   // Update organization info
   const updateOrganization = async (organization: OrganizationInfo | null) => {
-    console.log('updateOrganization called with:', organization)
-    setSystem(prevSystem => {
-      const newSettings = { ...prevSystem, organization: organization || undefined }
-      console.log('Setting new system state:', newSettings)
-      // Save to storage async
-      systemSettings.setValue(newSettings).catch(error => {
-        console.error('Failed to save organization info:', error)
-      })
-      return newSettings
-    })
-    console.log('Organization state update initiated')
+    const newSettings = { ...system, organization: organization || undefined }
+    
+    // Update state first
+    setSystem(newSettings)
+    
+    // Then save to storage and wait for completion
+    try {
+      await systemSettings.setValue(newSettings)
+    } catch (error) {
+      console.error('Failed to save organization info:', error)
+      throw error
+    }
   }
 
   // Update user info
   const updateUser = async (user: UserInfo | null) => {
-    setSystem(prevSystem => {
-      const newSettings = { ...prevSystem, user: user || undefined }
-      // Save to storage async
-      systemSettings.setValue(newSettings).catch(error => {
-        console.error('Failed to save user info:', error)
-      })
-      return newSettings
-    })
+    const newSettings = { ...system, user: user || undefined }
+    
+    // Update state first
+    setSystem(newSettings)
+    
+    // Then save to storage and wait for completion
+    try {
+      await systemSettings.setValue(newSettings)
+    } catch (error) {
+      console.error('Failed to save user info:', error)
+      throw error
+    }
   }
 
   return {
