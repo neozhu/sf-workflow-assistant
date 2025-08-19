@@ -210,23 +210,23 @@ export const PROFILES: Profile[] = [
     Name: "OneVoith Standard Sales User"
   },
   {
-    Id: "00ebh000000faM5AAI",
+    Id: "00ebH000004LJ8bQAG",
     Name: "OneVoith Keyuser VP"
   },
   {
-    Id: "00ebh000000faNhAAI",
+    Id: "00ebH000004LIxJQAW",
     Name: "OneVoith Manager VP"
   },
   {
-    Id: "00ebh000000faPJAAY",
+    Id: "00ebH000004LIinQAG",
     Name: "OneVoith Service Keyuser VP"
   },
   {
-    Id: "00ebh000000faSXAAY",
+    Id: "00ebH000004LJIHQA4",
     Name: "OneVoith Service Restricted VP"
   },
   {
-    Id: "00ebh000000faU9AAI",
+    Id: "00ebH000004LJOjQAO",
     Name: "OneVoith Standard Sales User VP"
   },
   {
