@@ -466,8 +466,13 @@ export async function toggleUserActiveStatus(
     // Prepare the update request
     const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User/${userId}`
     
-    const updateData = {
+    const updateData: Record<string, any> = {
       IsActive: isActive
+    }
+    
+    // When activating a user, clear the Limited_Until__c field
+    if (isActive) {
+      updateData.Limited_Until__c = null
     }
 
     // Make API request to update user
