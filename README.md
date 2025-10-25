@@ -4,7 +4,7 @@ A powerful browser extension that streamlines Salesforce user management through
 
 ## Features
 
-- � **Workflow Integration** - Automatically extracts applicant information from workflow.voith.com forms
+- � **Workflow Integration** - Automatically extracts applicant information from workflow.company.com forms
 - 🔍 **Smart User Search** - Search existing Salesforce users by name, email, or shortname
 - ⚡ **One-Click Operations** - Create new users or activate existing accounts instantly
 - � **Intelligent User Creation** - Auto-populate new user fields from workflow data with smart defaults
@@ -101,7 +101,7 @@ The extension should now appear in your Edge browser and be ready for use.
    - Configure access token and instance URL in extension settings
 
 2. **Navigate to Workflow Form**
-   - Go to workflow.voith.com
+   - Go to workflow.company.com
    - Open any user application form
 
 3. **Extract and Process**
@@ -167,7 +167,7 @@ sf-workflow-assistant/
 ## Key Components
 
 ### Content Script (`entrypoints/content.ts`)
-- Automatically detects workflow.voith.com pages
+- Automatically detects workflow.company.com pages
 - Extracts applicant information from forms
 - Sends data to sidepanel for processing
 
@@ -205,7 +205,7 @@ The extension requires the following permissions:
   - `*.force.com/*` 
   - `*.my.salesforce.com/*`
   - `*.lightning.force.com/*`
-  - `workflow.voith.com/*`
+  - `workflow.company.com/*`
 
 ### Customization
 
@@ -286,7 +286,7 @@ This extension supports all major browsers through WXT's universal browser compa
    - Verify the selected profile and user license are valid
 
 4. **Content script not working**
-   - Make sure you're on workflow.voith.com
+   - Make sure you're on workflow.company.com
    - Check if the page structure has changed
    - Reload the extension and refresh the page
 
