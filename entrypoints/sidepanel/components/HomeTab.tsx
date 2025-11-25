@@ -27,6 +27,7 @@ interface ApplicantInfoData {
   businessArea: string;
   workAreas: string[];
   dateLimit: string;
+  operatingUnit: string;
 }
 
 export function HomeTab() {

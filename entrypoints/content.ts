@@ -10,6 +10,7 @@ interface ApplicantInfo {
   location: string;
   businessArea: string;
   dateLimit: string | null;
+  operatingUnit: string;
   workAreas: string[];
 }
 
@@ -41,15 +42,17 @@ function extractApplicantInfo(): ApplicantInfo | null {
     // Extract phone
     const phoneElements = subscriberDataDiv.querySelectorAll('a[href*="profile?email"]');
     let phone = '';
+    let operatingUnit='';
     for (const element of phoneElements) {
       const text = element.textContent?.trim() || '';
       if (text.includes('+') || text.match(/\d{3}/)) {
         phone = text;
-        break;
       }
-    }
-
-    // Extract Details section information
+      const ouMatch = text.match(/\(([^/]+)\//);
+      if (ouMatch && ouMatch[1]) {
+        operatingUnit = ouMatch[1].trim();
+      }
+    }    // Extract Details section information
     const divisionInput = document.querySelector('input[name="MainData.Division"]') as HTMLInputElement;
     const division = divisionInput?.value?.trim() || '';
 
@@ -89,6 +92,7 @@ function extractApplicantInfo(): ApplicantInfo | null {
       location,
       businessArea,
       dateLimit,
+      operatingUnit,
       workAreas
     };
 

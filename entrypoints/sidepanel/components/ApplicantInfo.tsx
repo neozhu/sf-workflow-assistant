@@ -265,9 +265,9 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               
             </div>
 
-            {/* Business Line selection (required) */}
+            {/* Business Line selection */}
             <div className="space-y-2 mt-3">
-              <div className="text-xs font-medium">Business Line <span className="text-destructive">*</span></div>
+              <div className="text-xs font-medium">Business Line </div>
               <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Business_Line__c. Choose the actual business line.</div>
               <div className="flex flex-wrap gap-2">
                 {BUSINESS_LINES.map((b) => (
@@ -283,9 +283,9 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               </div>
              
             </div>
-            {/* option unit selection (required) */}
+            {/* option unit selection */}
             <div className="space-y-2 mt-3">
-              <div className="text-xs font-medium">Operating Unit <span className="text-destructive">*</span></div>
+              <div className="text-xs font-medium">Operating Unit</div>
               <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Operating_Unit__c. Choose the actual business line.</div>
               <div className="flex flex-wrap gap-2">
                 {OPERATING_UNIT.map((b) => (
