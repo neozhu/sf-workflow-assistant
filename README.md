@@ -43,14 +43,26 @@ Before using the extension, you need to set up Salesforce CLI and obtain an acce
    ```
 
 2. **Login to your Salesforce organization**
+
+   For production environments:
    ```bash
    sf org login web --alias PROD
+   ```
+
+   For sandbox environments:
+   ```bash
+   sf org login web --instance-url https://test.salesforce.com --alias SANDBOX
    ```
    This will open a browser window for authentication. Login with your Salesforce credentials.
 
 3. **Get organization details and access token**
+   For production:
    ```bash
    sf org display --target-org PROD
+   ```
+   For sandbox:
+   ```bash
+   sf org display --target-org SANDBOX
    ```
 
 4. **Copy the required information:**

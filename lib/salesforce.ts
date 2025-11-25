@@ -45,7 +45,9 @@ export interface CreateSalesforceUserInput {
   emailEncodingKey?: string
   languageLocaleKey?: string
   division?: string
-  businessLine?: string
+  businessLine?: string | null
+  operatingUnit?: string | null
+  limitedUntil?: string | null
 }
 
 export interface CreateSalesforceUserResult {
@@ -121,7 +123,8 @@ export async function createSalesforceUser(
     if (input.phone) payload.Phone = input.phone
     if (input.division) payload['Division__c'] = input.division
     if (input.businessLine) payload['Business_Line__c'] = input.businessLine
-
+    if (input.limitedUntil) payload['Limited_Until__c'] = input.limitedUntil
+    if (input.operatingUnit) payload['Operating_Unit__c'] = input.operatingUnit
     const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`
     const response = await fetch(apiUrl, {
       method: 'POST',

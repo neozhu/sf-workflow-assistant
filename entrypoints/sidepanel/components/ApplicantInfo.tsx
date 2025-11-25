@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react'
 import { useState } from 'react'
-import { PROFILES, USER_ROLES, BUSINESS_LINES } from '@/lib/salesforce-data'
+import { PROFILES, USER_ROLES, BUSINESS_LINES, OPERATING_UNIT } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
 interface ApplicantInfo {
@@ -16,6 +16,7 @@ interface ApplicantInfo {
   system: string;
   location: string;
   businessArea: string;
+  dateLimit:string;
   workAreas: string[];
 }
 
@@ -33,7 +34,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [creating, setCreating] = useState<boolean>(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
-
+  const [selectedOperatingUnit, setSelectedOperatingUnit] = useState<string | null>(null)
   const handleCreate = async () => {
     try {
       setCreating(true)
@@ -46,10 +47,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
       }
       if (!selectedProfileId) {
         setCreateError('Please select a Profile.')
-        return
-      }
-      if (!selectedBusinessLine) {
-        setCreateError('Please select a Business Line.')
         return
       }
       if (!selectedRoleId) {
@@ -66,6 +63,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         userRoleId: selectedRoleId,
         division: applicantInfo.division,
         businessLine: selectedBusinessLine,
+        operatingUnit: selectedOperatingUnit,
+        limitedUntil: undefined,
       })
       if (!res.success) {
         setCreateError(res.error || 'Failed to create user')
@@ -174,7 +173,16 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
             </div>
           </div>
         </div>
-
+        {/* Date limit */}
+        {applicantInfo.dateLimit && (
+          <div className="flex items-center gap-2 text-sm">
+            <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-medium text-muted-foreground text-xs">Date Limit</div>
+              <div className="truncate">{applicantInfo.dateLimit}</div>
+            </div>
+          </div>
+        )}
         {/* Create New User Section */}
         {canCreate && (
           <div className="pt-2">
@@ -275,7 +283,24 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               </div>
              
             </div>
-
+            {/* option unit selection (required) */}
+            <div className="space-y-2 mt-3">
+              <div className="text-xs font-medium">Operating Unit <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Operating_Unit__c. Choose the actual business line.</div>
+              <div className="flex flex-wrap gap-2">
+                {OPERATING_UNIT.map((b) => (
+                  <Badge
+                    key={b}
+                    onClick={() => setSelectedOperatingUnit(b)}
+                    variant={selectedOperatingUnit === b ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedOperatingUnit === b ? 'ring-2 ring-primary' : ''}`}
+                  >
+                    {b}
+                  </Badge>
+                ))}
+              </div>
+             
+            </div>
             {/* Create action */}
             {createError && (
               <div className="flex items-center gap-2 text-xs text-destructive"><AlertCircle className="h-4 w-4" />{createError}</div>

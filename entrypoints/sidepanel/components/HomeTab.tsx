@@ -26,6 +26,7 @@ interface ApplicantInfoData {
   location: string;
   businessArea: string;
   workAreas: string[];
+  dateLimit: string;
 }
 
 export function HomeTab() {

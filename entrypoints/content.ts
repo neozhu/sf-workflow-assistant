@@ -9,6 +9,7 @@ interface ApplicantInfo {
   system: string;
   location: string;
   businessArea: string;
+  dateLimit: string | null;
   workAreas: string[];
 }
 
@@ -61,6 +62,9 @@ function extractApplicantInfo(): ApplicantInfo | null {
     const businessAreaInput = document.querySelector('input[name="MainData.Area"]') as HTMLInputElement;
     const businessArea = businessAreaInput?.value?.trim() || '';
 
+    const dateLimitInput = document.querySelector('input[name="MainData.DateLimit"]') as HTMLInputElement;
+    const dateLimit = dateLimitInput?.value?.trim() || null;
+
     // Extract Work Areas information
     const workAreas: string[] = [];
     const workAreaDiv = document.querySelector('#tblWorkAreas');
@@ -84,6 +88,7 @@ function extractApplicantInfo(): ApplicantInfo | null {
       system,
       location,
       businessArea,
+      dateLimit,
       workAreas
     };
 
