@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PROFILES, USER_ROLES, BUSINESS_LINES, OPERATING_UNIT } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
@@ -37,6 +37,14 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
   const [selectedOperatingUnit, setSelectedOperatingUnit] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (applicantInfo.operatingUnit && OPERATING_UNIT.includes(applicantInfo.operatingUnit)) {
+      setSelectedOperatingUnit(applicantInfo.operatingUnit)
+    } else {
+      setSelectedOperatingUnit(null)
+    }
+  }, [applicantInfo.operatingUnit])
+
   const handleCreate = async () => {
     try {
       setCreating(true)
@@ -55,6 +63,14 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         setCreateError('Please select a User Role.')
         return
       }
+      if (!applicantInfo.email) {
+        setCreateError('Applicant email cannot be empty.')
+        return
+      }
+      if (!applicantInfo.shortname) {
+        setCreateError('Applicant shortname cannot be empty.')
+        return
+      }
       const name = applicantInfo.name?.trim() || applicantInfo.email?.split('@')[0] || 'User'
       const res = await createSalesforceUser(config, {
         name,
@@ -66,7 +82,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         division: applicantInfo.division,
         businessLine: selectedBusinessLine,
         operatingUnit: selectedOperatingUnit,
-        limitedUntil: undefined,
+        limitedUntil: applicantInfo.dateLimit,
       })
       if (!res.success) {
         setCreateError(res.error || 'Failed to create user')
