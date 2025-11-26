@@ -16,8 +16,9 @@ interface ApplicantInfo {
   system: string;
   location: string;
   businessArea: string;
-  dateLimit:string;
   workAreas: string[];
+  dateLimit: string;
+  operatingUnit: string;
 }
 
 interface ApplicantInfoProps {
@@ -35,6 +36,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
   const [selectedOperatingUnit, setSelectedOperatingUnit] = useState<string | null>(null)
+
   const handleCreate = async () => {
     try {
       setCreating(true)
@@ -100,7 +102,16 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
             <div className="truncate">{applicantInfo.shortname || 'N/A'}</div>
           </div>
         </div>
-
+        {/* Operating Unit */}
+        {applicantInfo.operatingUnit && (
+          <div className="flex items-center gap-2 text-sm">
+            <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-medium text-muted-foreground text-xs">Operating Unit</div>
+              <div className="truncate">{applicantInfo.operatingUnit}</div>
+            </div>
+          </div>
+        )}
         {/* Email */}
         <div className="flex items-center gap-2 text-sm">
           <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -276,24 +287,6 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                     onClick={() => setSelectedBusinessLine(b)}
                     variant={selectedBusinessLine === b ? 'default' : 'secondary'}
                     className={`cursor-pointer ${selectedBusinessLine === b ? 'ring-2 ring-primary' : ''}`}
-                  >
-                    {b}
-                  </Badge>
-                ))}
-              </div>
-             
-            </div>
-            {/* option unit selection */}
-            <div className="space-y-2 mt-3">
-              <div className="text-xs font-medium">Operating Unit</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Operating_Unit__c. Choose the actual business line.</div>
-              <div className="flex flex-wrap gap-2">
-                {OPERATING_UNIT.map((b) => (
-                  <Badge
-                    key={b}
-                    onClick={() => setSelectedOperatingUnit(b)}
-                    variant={selectedOperatingUnit === b ? 'default' : 'secondary'}
-                    className={`cursor-pointer ${selectedOperatingUnit === b ? 'ring-2 ring-primary' : ''}`}
                   >
                     {b}
                   </Badge>
