@@ -46,6 +46,8 @@ export interface CreateSalesforceUserInput {
   languageLocaleKey?: string
   division?: string
   businessLine?: string | null
+  functionName?: string | null
+  country?: string | null
   operatingUnit?: string | null
   limitedUntil?: string | null
 }
@@ -123,6 +125,8 @@ export async function createSalesforceUser(
     if (input.phone) payload.Phone = input.phone
     if (input.division) payload['Division__c'] = input.division
     if (input.businessLine) payload['Business_Line__c'] = input.businessLine
+    if (input.functionName) payload['Function__c'] = input.functionName
+    if (input.country) payload['Country__c'] = input.country
     if (input.limitedUntil) payload['Limited_Until__c'] = input.limitedUntil
     if (input.operatingUnit) payload['Operating_Unit__c'] = input.operatingUnit
     const apiUrl = `${instanceUrl}/services/data/v64.0/sobjects/User`

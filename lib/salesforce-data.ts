@@ -37,7 +37,45 @@ export const BUSINESS_LINES: string[] = [
 ]
 
 /**
- * OPERATING UNIT for custom field Business_Line__c
+ * Function options for custom field Function__c
+ */
+export const FUNCTION: string[] = [
+  'APPLICATION ENGINEERING',
+  'CUSTOMER SERVICE',
+  'MANAGEMENT',
+  'OTHERS',
+  'PRODUCT MANAGEMENT',
+  'SALES',
+  'SERVICE',
+  'TECHNICAL ENGINEERING'
+]
+
+/**
+ * COUNTRY for custom field Country__c
+ */
+export const COUNTRY: string[] = [
+  'Germany',
+  'USA',
+  'Brazil',
+  'Austria',
+  'Spain',
+  'Italy',
+  'Switzerland',
+  'Canada',
+  'Norway',
+  'Sweden',
+  'Peru',
+  'Colombia',
+  'Chile',
+  'Mexico',
+  'Ecuador',
+  'China',
+  'India',
+  'Japan'
+]
+
+/**
+ * OPERATING UNIT for custom field Operating_Unit__c
  */
 export const OPERATING_UNIT: string[] = [
   "DSG",

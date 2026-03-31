@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { User, Mail, Phone, Hash, Building, Server, MapPin, Briefcase, CheckCircle, PlusCircle, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { PROFILES, USER_ROLES, BUSINESS_LINES, OPERATING_UNIT } from '@/lib/salesforce-data'
+import { PROFILES, USER_ROLES, BUSINESS_LINES, OPERATING_UNIT,FUNCTION,COUNTRY } from '@/lib/salesforce-data'
 import { createSalesforceUser, loadSalesforceConfig } from '@/lib/salesforce'
 
 interface ApplicantInfo {
@@ -32,6 +32,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [selectedBusinessLine, setSelectedBusinessLine] = useState<string | null>(null)
+  const [selectedFunction, setSelectedFunction] = useState<string | null>(null)
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
   const [creating, setCreating] = useState<boolean>(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState<string | null>(null)
@@ -63,6 +65,18 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         setCreateError('Please select a User Role.')
         return
       }
+      if (!selectedBusinessLine) {
+        setCreateError('Please select a Business Line.')
+        return
+      }
+      if (!selectedFunction) {
+        setCreateError('Please select a Function.')
+        return
+      }
+      if (!selectedCountry) {
+        setCreateError('Please select a Country.')
+        return
+      }
       if (!applicantInfo.email) {
         setCreateError('Applicant email cannot be empty.')
         return
@@ -81,6 +95,8 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
         userRoleId: selectedRoleId,
         division: applicantInfo.division,
         businessLine: selectedBusinessLine,
+        functionName: selectedFunction,
+        country: selectedCountry,
         operatingUnit: selectedOperatingUnit,
         limitedUntil: applicantInfo.dateLimit,
       })
@@ -223,7 +239,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
 
         {canCreate && expanded && (
           <div className="mt-3 space-y-3 border-t pt-3">
-            <div className="text-xs text-muted-foreground">Select User Role, Profile, and Business Line. All fields are required.</div>
+            <div className="text-xs text-muted-foreground">Select User Role, Profile, Business Line, Function, and Country. All fields are required.</div>
 
             {/* User Role selection (required) */}
             <div className="space-y-2 mt-3">
@@ -294,7 +310,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
 
             {/* Business Line selection */}
             <div className="space-y-2 mt-3">
-              <div className="text-xs font-medium">Business Line </div>
+              <div className="text-xs font-medium">Business Line <span className="text-destructive">*</span></div>
               <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Business_Line__c. Choose the actual business line.</div>
               <div className="flex flex-wrap gap-2">
                 {BUSINESS_LINES.map((b) => (
@@ -310,6 +326,42 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               </div>
              
             </div>
+            {/* Function selection */}
+            <div className="space-y-2 mt-3">
+              <div className="text-xs font-medium">Function <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Function__c. Choose the function that best matches the user.</div>
+              <div className="flex flex-wrap gap-2">
+                {FUNCTION.map((item) => (
+                  <Badge
+                    key={item}
+                    onClick={() => setSelectedFunction(item)}
+                    variant={selectedFunction === item ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedFunction === item ? 'ring-2 ring-primary' : ''}`}
+                  >
+                    {item}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+             {/* Country selection */}
+            <div className="space-y-2 mt-3">
+              <div className="text-xs font-medium">Country <span className="text-destructive">*</span></div>
+              <div className="text-[11px] text-muted-foreground mt-1">Sets custom field Country__c. Choose the user's country.</div>
+              <div className="flex flex-wrap gap-2">
+                {COUNTRY.map((item) => (
+                  <Badge
+                    key={item}
+                    onClick={() => setSelectedCountry(item)}
+                    variant={selectedCountry === item ? 'default' : 'secondary'}
+                    className={`cursor-pointer ${selectedCountry === item ? 'ring-2 ring-primary' : ''}`}
+                  >
+                    {item}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+             
             {/* Create action */}
             {createError && (
               <div className="flex items-center gap-2 text-xs text-destructive"><AlertCircle className="h-4 w-4" />{createError}</div>
@@ -318,7 +370,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               <div className="flex items-center gap-2 text-xs text-green-600"><CheckCircle2 className="h-4 w-4" />{createSuccess}</div>
             )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId} className="gap-2">
+              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId || !selectedFunction || !selectedCountry} className="gap-2">
                 <UserPlus className="h-4 w-4" />
                 {creating ? 'Creating...' : 'Create Salesforce User'}
               </Button>
