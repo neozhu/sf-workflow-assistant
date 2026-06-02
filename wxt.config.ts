@@ -13,7 +13,7 @@ export default defineConfig({
     plugins: [tailwindcss()] as unknown as any[],
   }),
   manifest: {
-    permissions: ['sidePanel', 'storage', 'contextMenus'],
+    permissions: ['sidePanel', 'storage', 'contextMenus', 'cookies'],
     host_permissions: [
       'https://*.salesforce.com/*',
       'https://*.force.com/*',

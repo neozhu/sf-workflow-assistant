@@ -18,7 +18,6 @@ A powerful browser extension that streamlines Salesforce user management through
 
 ## Demo
 
-![Extension Demo](public/demo.png)
 
 *Watch how the Salesforce Workflow Assistant works: extract applicant data from workflow forms and manage Salesforce users seamlessly.*
 

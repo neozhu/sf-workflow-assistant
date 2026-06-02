@@ -23,7 +23,8 @@ import {
   Sun,
   Loader2,
   CheckCircle,
-  XCircle
+  XCircle,
+  KeyRound
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -50,6 +51,7 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
   const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null)
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [isConnectionValid, setIsConnectionValid] = useState(false)
+  const [isImportingSession, setIsImportingSession] = useState(false)
 
   // Load saved configuration on component mount
   useEffect(() => {
@@ -169,6 +171,95 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
       await updateUser(null)
     } finally {
       setIsTestingConnection(false)
+    }
+  }
+
+  const handleUseBrowserSession = async () => {
+    if (!system.instanceUrl) {
+      setConnectionResult({
+        success: false,
+        error: 'Please provide an Instance URL before reading your browser session'
+      })
+      return
+    }
+
+    setIsImportingSession(true)
+    setConnectionResult(null)
+    setIsConnectionValid(false)
+
+    try {
+      const sessionResult = await browser.runtime.sendMessage({
+        type: 'GET_SALESFORCE_SESSION',
+        instanceUrl: system.instanceUrl
+      }) as {
+        success: boolean
+        instanceUrl?: string
+        accessToken?: string
+        error?: string
+      }
+
+      if (!sessionResult.success || !sessionResult.accessToken || !sessionResult.instanceUrl) {
+        setOrganizationInfo(null)
+        setUserInfo(null)
+        setConnectionResult({
+          success: false,
+          error: sessionResult.error || 'Unable to read Salesforce browser session'
+        })
+        return
+      }
+
+      await updateSystem({
+        instanceUrl: sessionResult.instanceUrl,
+        accessToken: sessionResult.accessToken
+      })
+
+      const result = await testSalesforceConnection({
+        instanceUrl: sessionResult.instanceUrl,
+        accessToken: sessionResult.accessToken
+      })
+
+      setConnectionResult(result)
+
+      if (result.success && result.organization) {
+        setOrganizationInfo(result.organization)
+        setIsConnectionValid(true)
+
+        if (result.user) {
+          setUserInfo(result.user)
+        }
+
+        await updateOrganization(result.organization)
+        if (result.user) {
+          await updateUser(result.user)
+        }
+
+        saveSalesforceConfig(
+          {
+            instanceUrl: sessionResult.instanceUrl,
+            accessToken: sessionResult.accessToken
+          },
+          result.organization,
+          result.user || undefined
+        )
+      } else {
+        setOrganizationInfo(null)
+        setUserInfo(null)
+        setIsConnectionValid(false)
+        await updateOrganization(null)
+        await updateUser(null)
+      }
+    } catch (error) {
+      setOrganizationInfo(null)
+      setUserInfo(null)
+      setIsConnectionValid(false)
+      setConnectionResult({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to read Salesforce browser session'
+      })
+      await updateOrganization(null)
+      await updateUser(null)
+    } finally {
+      setIsImportingSession(false)
     }
   }
 
@@ -299,11 +390,29 @@ export function SettingsTab({ appearance, system, updateAppearance, updateSystem
           <Separator />
 
           <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleUseBrowserSession}
+              disabled={isImportingSession || isTestingConnection || !system.instanceUrl}
+            >
+              {isImportingSession ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Reading Browser Session...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Use Browser Session
+                </>
+              )}
+            </Button>
             <Button 
               variant="outline" 
               className="w-full"
               onClick={handleTestConnection}
-              disabled={isTestingConnection || !system.instanceUrl || !system.accessToken}
+              disabled={isTestingConnection || isImportingSession || !system.instanceUrl || !system.accessToken}
             >
               {isTestingConnection ? (
                 <>
