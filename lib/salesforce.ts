@@ -2,6 +2,8 @@
  * Salesforce API utilities for connecting and querying data
  */
 
+import { COUNTRY_MAP } from './salesforce-data'
+
 export interface SalesforceConfig {
   instanceUrl: string
   accessToken: string
@@ -128,7 +130,7 @@ export async function createSalesforceUser(
     if (input.functionName) payload['Function__c'] = input.functionName
     if (input.country){
         payload['Country__c'] = input.country
-        payload['CountryCode'] = input.country
+        payload['CountryCode'] = COUNTRY_MAP[input.country] || null
     } 
     if (input.limitedUntil) payload['Limited_Until__c'] = input.limitedUntil
     if (input.operatingUnit) payload['Operating_Unit__c'] = input.operatingUnit

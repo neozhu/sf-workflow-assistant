@@ -75,6 +75,30 @@ export const COUNTRY: string[] = [
 ]
 
 /**
+ * Map country names to 2-letter ISO codes
+ */
+export const COUNTRY_MAP: Record<string, string> = {
+  'Germany': 'DE',
+  'USA': 'US',
+  'Brazil': 'BR',
+  'Austria': 'AT',
+  'Spain': 'ES',
+  'Italy': 'IT',
+  'Switzerland': 'CH',
+  'Canada': 'CA',
+  'Norway': 'NO',
+  'Sweden': 'SE',
+  'Peru': 'PE',
+  'Colombia': 'CO',
+  'Chile': 'CL',
+  'Mexico': 'MX',
+  'Ecuador': 'EC',
+  'China': 'CN',
+  'India': 'IN',
+  'Japan': 'JP'
+}
+
+/**
  * OPERATING UNIT for custom field Operating_Unit__c
  */
 export const OPERATING_UNIT: string[] = [
