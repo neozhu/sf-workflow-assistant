@@ -235,6 +235,14 @@ export const USER_ROLES: UserRole[] = [
     Name: "Pilotfish - User"
   },
   {
+    Id: "00E4H000000NvzKUAS",
+    Name: "VH - Global"
+  },
+  {
+    Id: "00E4H000000NvzNUAS",
+    Name: "VH - Master"
+  },
+  {
     Id: "00E4H000000NvzAUAS",
     Name: "VH - America North User"
   },
@@ -253,6 +261,14 @@ export const USER_ROLES: UserRole[] = [
   {
     Id: "00E4H000000NvzMUAS",
     Name: "VH - Global User"
+  },
+  {
+    Id: "00E4H000000NvzaUAC",
+    Name: "VP - Global"
+  },
+  {
+    Id: "00E4H000000NvzbUAC",
+    Name: "VP - Master"
   },
   {
     Id: "00E4H000000NvzPUAS",
@@ -285,6 +301,14 @@ export const USER_ROLES: UserRole[] = [
   {
     Id: "00E4H000000NvzZUAS",
     Name: "VP - EMEA User"
+  },
+  {
+    Id: "00E4H000000NvzrUAC",
+    Name: "VT - Global"
+  },
+  {
+    Id: "00E4H000000NvzsUAC",
+    Name: "VT - Master"
   },
   {
     Id: "00E4H000000NvzjUAC",
