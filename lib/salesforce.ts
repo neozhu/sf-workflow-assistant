@@ -116,7 +116,7 @@ export async function createSalesforceUser(
       LastName: lastName,
       CommunityNickname: nickName,
       ProfileId: input.profileId,
-      UserPermissionsMarketingUser:true,
+      UserPermissionsMarketingUser: input.profileId !== '00ej0000000qRxgAAE',
       TimeZoneSidKey: input.timeZoneSidKey || 'GMT',
       LocaleSidKey: input.localeSidKey || 'en_US',
       EmailEncodingKey: input.emailEncodingKey || 'UTF-8',

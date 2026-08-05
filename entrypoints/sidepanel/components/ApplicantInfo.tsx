@@ -316,7 +316,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
                 {BUSINESS_LINES.map((b) => (
                   <Badge
                     key={b}
-                    onClick={() => setSelectedBusinessLine(b)}
+                    onClick={() => setSelectedBusinessLine(current => current === b ? null : b)}
                     variant={selectedBusinessLine === b ? 'default' : 'secondary'}
                     className={`cursor-pointer ${selectedBusinessLine === b ? 'ring-2 ring-primary' : ''}`}
                   >
