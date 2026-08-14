@@ -126,7 +126,7 @@ export function HomeTab() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="space-y-4 p-4">
+      <div className="space-y-2 px-2 py-2">
         {/* Search Area */}
         <div className="space-y-2">
           <div className="flex gap-2">

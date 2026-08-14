@@ -370,7 +370,7 @@ export function ApplicantInfo({ applicantInfo, canCreate = false, onCreated }: A
               <div className="flex items-center gap-2 text-xs text-green-600"><CheckCircle2 className="h-4 w-4" />{createSuccess}</div>
             )}
             <div className="flex justify-end">
-              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedBusinessLine || !selectedRoleId || !selectedFunction || !selectedCountry} className="gap-2">
+              <Button size="sm" onClick={handleCreate} disabled={creating || !selectedProfileId || !selectedRoleId || !selectedFunction || !selectedCountry} className="gap-2">
                 <UserPlus className="h-4 w-4" />
                 {creating ? 'Creating...' : 'Create Salesforce User'}
               </Button>

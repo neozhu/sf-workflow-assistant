@@ -111,20 +111,17 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
 
   return (
     <Card className="p-3">
-      <div className="flex items-center gap-3">
-        {/* User Avatar */}
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={currentUser.picture} alt={currentUser.name} />
-          <AvatarFallback>
-            {currentUser.name.split(' ').map((n: string) => n[0]).join('')}
-          </AvatarFallback>
-        </Avatar>
-        
-        {/* User Information */}
-        <div className="flex-1 min-w-0">
-          <div className="space-y-1">
-            {/* First row: Username and Status */}
-            <div className="flex items-center gap-2">
+      <div className="space-y-2">
+        {/* First row: User identity and status */}
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10 flex-shrink-0">
+            <AvatarImage src={currentUser.picture} alt={currentUser.name} />
+            <AvatarFallback>
+              {currentUser.name.split(' ').map((n: string) => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
+
+          <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <span 
                   className="font-medium text-sm truncate text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
@@ -146,8 +143,12 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
               >
                 {currentUser.is_active ? 'active' : 'inactive'}
               </Badge>
-            </div>
-            
+          </div>
+        </div>
+
+        {/* Second row: User details and action */}
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
             {/* Second row: Email */}
             <div className="text-xs text-muted-foreground truncate">
               {currentUser.email}
@@ -175,14 +176,12 @@ export function UserCard({ user, onActivateToggle, onStatusUpdate }: UserCardPro
               </div>
             )}
           </div>
-        </div>
-        
-        {/* Action Button */}
-        <div className="flex-shrink-0">
+
+          {/* Action Button */}
           <Button
             variant={currentUser.is_active ? 'destructive' : 'default'}
             size="sm"
-            className="text-xs cursor-pointer hover:scale-105 transition-transform duration-200"
+            className="flex-shrink-0 text-xs cursor-pointer hover:scale-105 transition-transform duration-200"
             onClick={handleToggleActivation}
             disabled={isLoading}
           >
