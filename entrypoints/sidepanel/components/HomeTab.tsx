@@ -86,11 +86,11 @@ export function HomeTab() {
         setApplicantInfo(info);
         
         // Auto-fill search term with shortname and trigger search
-        if (info.shortname) {
-          setSearchTerm(info.shortname);
+        if (info.email) {
+          setSearchTerm(info.email);
           // Trigger search automatically
           setTimeout(() => {
-            handleSearchWithTerm(info.shortname);
+            handleSearchWithTerm(info.email);
           }, 100);
         }
       }
